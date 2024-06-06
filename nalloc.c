@@ -6,6 +6,9 @@
  * Fast Allocation and Deallocation of Memory Based on Object Lifetimes
  * David R.Hanson
  * Software - Practice and Experience, Vol. 20(1), 5-12 (January 1990)
+ *
+ * The above is the first reference at
+ * https://en.wikipedia.org/wiki/Region-based_memory_management
  */
 
 #include "rc.h"
