@@ -309,6 +309,16 @@ CompileOpts = (
     # -DVERSION='"'$VERSION'"'
 	-DDESCRIPTION^'="'^$GIT_COMMIT^'"'
 )
+srcdir = .
+v=${cd $srcdir && git describe --always 2>/dev/null || true}
+if (~ $v ()) {
+	v = v1.7.4
+}
+{
+	echo '#ifndef VERSION'
+	echo '#define VERSION "'$v'"'
+	echo '#endif'
+} > version.h
 
 LinkOpts = (
 	$CommonOpts
