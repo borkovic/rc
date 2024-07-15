@@ -306,7 +306,7 @@ CompileOpts = (
     -DRC_ADDON=$RC_ADDON
     -DHASH_BANG=$HASH_BANG
     -DPACKAGE='"'$PACKAGE'"'
-    -DVERSION='"'$VERSION'"'
+    # -DVERSION='"'$VERSION'"'
 	-DDESCRIPTION^'="'^$GIT_COMMIT^'"'
 )
 
