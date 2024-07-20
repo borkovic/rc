@@ -1,5 +1,8 @@
 #! /usr/bin/env rc
 
+# This repo is a fork of repo `https://github.com/rakitzis/rc`
+# Main branch there is `master`
+
 {
 
 Verbose=false
