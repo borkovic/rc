@@ -317,15 +317,15 @@ next_word:
 		calclval->m_Val = val;
 		tok = CALC_NUMBER;
 	}
-    break;
+	break;
 	case '\0':
-        ++lexData->m_CurrentWord;
-        if (*lexData->m_CurrentWord == 0) {
-		    tok = (CalcToken)(0);
-        } else {
-	        lexData->m_CurrentChar = *lexData->m_CurrentWord;
-            goto next_word;
-        }
+		++lexData->m_CurrentWord;
+		if (*lexData->m_CurrentWord == 0) {
+			tok = (CalcToken)(0);
+		} else {
+			lexData->m_CurrentChar = *lexData->m_CurrentWord;
+			goto next_word;
+		}
 		break;
 	default:
 		tok = CALC_BAD_TOKEN;
@@ -344,7 +344,7 @@ extern int calcdebug;
 static int CalcDoParse(char **words, CalcValue *r, CalcLexData *lexData) {
 	int status;
 
-    lexData->m_CurrentWord = words;
+	lexData->m_CurrentWord = words;
 	lexData->m_CurrentChar = words[0];
 	lexData->m_Indent[0] = '\0';
 
