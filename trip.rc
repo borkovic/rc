@@ -52,20 +52,31 @@ if (false) {					# WARNING: this differs from sh
 ######################################################################
 ## Testing builtin calc.
 ######################################################################
-fn testOneCalc { e=$1 v=$2 a=() x=() {
+fn testOneCalc { v=() e=() a=() x=() {
+  v=$1; shift
+  e=$*
   #echo exp: $e
+
   calc a = $e
   if (!~ $a $v) {
     fail calc: $e evaluates to $a, should be $v
   }
-  calc 'b='$e
+
+  calc 'b=' $e
   if (!~ $b $v) {
     fail calc: $e evaluates to $b, should be $v
   }
+
+  calc 'b='$^e
+  if (!~ $b $v) {
+    fail calc: $e evaluates to $b, should be $v
+  }
+
   x=${calc -p $e}
   if (! ~ $x $v) {
     fail calc -p: $e evaluates to $x, should be $v
   }
+
   x=${calc -p 'b' = $e}
   if (! ~ $x $b) {
     fail calc -p: $e evaluates to $x, should be $v
@@ -85,7 +96,7 @@ fn calcExprErr { exp=$1 msg=$2 s=() n=() {
 }}
 
 ######################################################################
-fn testManyCalcs { numEntries=() {
+fn testManyCalcs { numEntries=() exp=() val=() {
   *=(
     '4 || 3'                        1
     '5 || 0'                        1
@@ -166,10 +177,24 @@ fn testManyCalcs { numEntries=() {
     } else if (~ $#* 1) {
       fail calc test has $numEntries, should be even.
     } else {
-      testOneCalc $1 $2
+	  exp=$1 val=$2
+      testOneCalc $val $exp
       shift 2
     }
   }
+
+  testOneCalc 5 6 '^' 3
+  testOneCalc 1 5 '||' 3
+  testOneCalc 2 6 '&' 3
+  testOneCalc 1 4 '<' 3 '<' 1
+  testOneCalc 1 3 '<<' 2 '<<' 4 '==' '(3 << 2)' '<<' 4
+  testOneCalc 1 3 '<<' 2 '>>' 1 '==' 3 '<<' 1
+  testOneCalc -21 3 '*' '(' 0 - 7 ')'
+  testOneCalc 262144 4 @ 3 @ 2
+  testOneCalc 45 5 '*' 3 @ 2
+  testOneCalc 225 '(' 5 '*' 3 ')' @ 2
+  testOneCalc -12 +3 '*' -4
+
 
   calcExprErr  '2 / 0'       'division by 0'
 
@@ -179,7 +204,7 @@ fn testManyCalcs { numEntries=() {
 
   calcExprErr  '2 @ (-+1)'   'negative power since '$q'-+1'$q' == '$q'-(+1)'$q
 
-  calcExprErr  '2 ^'         'invalid expr syntax' 
+  calcExprErr  '2 ^'         'invalid expr syntax'
 
   calcExprErr  '*2'          'invalid expr syntax'
 
@@ -401,7 +426,7 @@ Pwd=`{/bin/pwd -P} cdpath=/ { # some local assignments
 	if (!~ `{/bin/pwd -P} `{sh -c 'cd $Pwd; /bin/pwd -P'})
 		fail could not cd to current directory!
 	if (!~ $Pwd $pwd) {
-		fail 'Pwd('$Pwd') != pwd ('$pwd')' 
+		fail 'Pwd('$Pwd') != pwd ('$pwd')'
 	}
 }
 

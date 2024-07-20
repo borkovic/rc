@@ -96,7 +96,8 @@ void b_kill(char **av) {
 	set(ret);
 }
 
-static int CalcDoParse(const char *s, CalcValue *r, CalcLexData *lexData);
+/* `words` is a null-ptr terminated array of char ptrs */
+static int CalcDoParse(char **words, CalcValue *r, CalcLexData *lexData);
 
 #if 0
 static void set_var(char *varname, long R)
@@ -164,33 +165,9 @@ void b_calc(char **av) {
 			CalcLexData lexData;
 			long parse_value = 0;
 			int parse_status;
-			const char *exp;
-
-			if (0 == av[i + 1]) {
-				exp = av[i];
-			} else {
-				int j;
-				char *p;
-				int len = 0;
-
-				for (j = i; av[j]; ++j) {	  /* count total len */
-					len += strlen(av[j]) + 1; /* 1 space between args:(a,b) to 'a b', no to 'ab' */
-				}
-
-				exp = p = nalloc(len + 1);
-				strcpy(p, av[i]); /* guaranteed non-null */
-				p += strlen(av[i++]);
-
-				for (; av[i]; ++i) {
-					*p++ = ' ';
-					strcpy(p, av[i]);
-					p += strlen(av[i]);
-				}
-				*p = '\0';
-			}
 
 			lexData.m_CalcCmdName = calcCmdName;
-			parse_status = CalcDoParse(exp, &parse_value, &lexData);
+			parse_status = CalcDoParse(av + i, &parse_value, &lexData);
 
 			if (0 == parse_status) {
 				const char *const varName = &lexData.m_Indent[0];
@@ -249,12 +226,8 @@ static CalcToken CalcLexer(CalcLexData *lexData, YYSTYPE *calclval) {
 	CalcToken tok;
 	int c;
 
-	if (lexData->m_LastToken != CALC_BAD_TOKEN) {
-		tok = lexData->m_LastToken;
-		lexData->m_LastToken = CALC_BAD_TOKEN;
-		return tok;
-	}
-	p = lexData->m_Current;
+next_word:
+	p = lexData->m_CurrentChar;
 	while (*p == ' ' || *p == '\t') {
 		p++;
 	}
@@ -272,7 +245,7 @@ static CalcToken CalcLexer(CalcLexData *lexData, YYSTYPE *calclval) {
 		}
 
 		lexData->m_Indent[i] = '\0';
-		lexData->m_Current = p;
+		lexData->m_CurrentChar = p;
 		return CALC_VAR;
 	}
 	switch (*p) {
@@ -343,15 +316,23 @@ static CalcToken CalcLexer(CalcLexData *lexData, YYSTYPE *calclval) {
 		}
 		calclval->m_Val = val;
 		tok = CALC_NUMBER;
-	} break;
+	}
+    break;
 	case '\0':
-		tok = (CalcToken)(0);
+        ++lexData->m_CurrentWord;
+        if (*lexData->m_CurrentWord == 0) {
+		    tok = (CalcToken)(0);
+        } else {
+	        lexData->m_CurrentChar = *lexData->m_CurrentWord;
+            goto next_word;
+        }
 		break;
 	default:
 		tok = CALC_BAD_TOKEN;
 		break;
 	}
-	lexData->m_Current = p;
+
+	lexData->m_CurrentChar = p;
 	return tok;
 } /* CalcLexer */
 
@@ -360,11 +341,11 @@ static CalcToken CalcLexer(CalcLexData *lexData, YYSTYPE *calclval) {
 #if YYDEBUG
 extern int calcdebug;
 #endif
-static int CalcDoParse(const char *s, CalcValue *r, CalcLexData *lexData) {
+static int CalcDoParse(char **words, CalcValue *r, CalcLexData *lexData) {
 	int status;
 
-	lexData->m_Current = lexData->m_Buf = s;
-	lexData->m_LastToken = CALC_BAD_TOKEN;
+    lexData->m_CurrentWord = words;
+	lexData->m_CurrentChar = words[0];
 	lexData->m_Indent[0] = '\0';
 
 #if YYDEBUG
