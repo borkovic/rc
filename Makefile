@@ -86,9 +86,7 @@ version.h: Makefile .git/index
 
 check: trip
 
-trip: rc tripping trip-no-build
-
-trip-no-build:
+trip: rc tripping
 	./rc -p <"$(srcdir)/trip.rc"
 
 acutest.h:; wget --compression=gzip https://raw.githubusercontent.com/mity/acutest/master/include/acutest.h
