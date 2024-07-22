@@ -1,5 +1,5 @@
 /* Define if you want to include extra builtins in addon.c */
-#define RC_ADDON 0
+#define RC_ADDON 1
 
 /* Define if you want to include parse tree dumper */
 #define RC_DEVELOP 0
