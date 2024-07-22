@@ -16,6 +16,7 @@ _LDFLAGS = -L$(PREFIX)/lib $(LDFLAGS)
 BINS = history mksignal mkstatval tripping
 HEADERS = edit.h getgroups.h input.h jbwrap.h proto.h rc.h rlimit.h stat.h \
 	wait.h
+GEN_HEADERS = sigmsgs.h
 OBJS = addon.o builtins.o calc.o edit-$(EDIT).o except.o exec.o fn.o \
 	footobar.o getopt.o glob.o glom.o hash.o heredoc.o input.o lex.o \
 	list.o main.o match.o nalloc.o open.o parse.o print.o redir.o \
@@ -34,7 +35,7 @@ rc: $(OBJS)
 	[ "$(EDIT)" = "null" ] && ledit="" || ledit="-l$(EDIT)"; \
 	$(CC) $(_LDFLAGS) $(_CFLAGS) -o $@ $(OBJS) $$ledit $(LDLIBS)
 
-$(OBJS): Makefile $(HEADERS) config.h
+$(OBJS): Makefile $(HEADERS) $(GEN_HEADERS) config.h
 builtins.o: addon.c
 exec.o: execve.c
 input.o: develop.c
@@ -56,9 +57,9 @@ lex.o parse.o: parse.c
 	mv $*.tab.c $*.c
 	mv $*.tab.h $*.h
 
-builtins.o fn.o hash.o sigmsgs.o signal.o status.o: sigmsgs.c
+addon.o builtins.o fn.o hash.o sigmsgs.o signal.o status.o: sigmsgs.c
 
-sigmsgs.c: mksignal
+sigmsgs.c sigmsgs.h: mksignal
 	@echo "GEN $@"
 	./mksignal
 
