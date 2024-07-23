@@ -345,7 +345,7 @@ static int CalcDoParse(char **words, CalcValue *r, CalcLexData *lexData) {
 	int status;
 
 	lexData->m_CurrentWord = words;
-	lexData->m_CurrentChar = words[0];
+	lexData->m_CurrentChar = *lexData->m_CurrentWord;
 	lexData->m_Indent[0] = '\0';
 
 #if YYDEBUG
