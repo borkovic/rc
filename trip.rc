@@ -320,7 +320,7 @@ submatch 'cat<<(eof eof)' 'rc: eof-marker not a single literal word' 'bad heredo
 #
 
 if (test -x ./obj/tripping && test -x ./tripping) {
-	fail Have both ./obj/tripping and ./trippng
+	fail Have both ./obj/tripping and ./tripping
 } else if (test -x ./obj/tripping && ! test -x ./tripping) {
     objDir=./obj
 } else if (! test -x ./obj/tripping && test -x ./tripping) {
@@ -1137,8 +1137,8 @@ if (! ~ $y(1)^$y(2)^$y(3) BCA) {
 	fail '$var(nlwords)'
 }
 
-tmp3=$tmpdir/tmp3
-tmp4=$tmpdir/tmp4
+tmp3=$tmpdir/tmp3.$pid
+tmp4=$tmpdir/tmp4.$pid
 s3=AAA3
 s4=BBBB4
 {
