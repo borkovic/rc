@@ -58,7 +58,7 @@ extern int printf(const char *, ...);
 %token CALC_VAR
 %token CALC_END_TOKEN CALC_BAD_TOKEN
 
-%pure-parser
+/*%pure-parser*/
 
 
 %start calc

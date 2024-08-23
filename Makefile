@@ -53,7 +53,7 @@ lex.o parse.o: parse.c
 
 .y.c:
 	@echo "GEN $@"
-	$(YACC) -b $* -d $<
+	$(YACC) -p calc -b $* -d $<
 	mv $*.tab.c $*.c
 	mv $*.tab.h $*.h
 
