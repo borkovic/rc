@@ -79,7 +79,7 @@ paren	: '(' body ')'		{ $$ = $2; }
 assign	: first optcaret '=' optcaret word	{ $$ = mk(nAssign,$1,$5); }
 
 epilog	:			{ $$ = NULL; }
-	| epilog redir		{ $$ = mk(nEpilog,$1,$2); }
+	| redir epilog		{ $$ = mk(nEpilog,$1,$2); }
 
 /* a redirection is a dup (e.g., >[1=2]) or a file redirection. (e.g., > /dev/null) */
 redir	: DUP			{ $$ = mk(nDup,$1.type,$1.left,$1.right); }
