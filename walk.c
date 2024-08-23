@@ -273,7 +273,7 @@ top:	sigchk();
 		break;
 	case nEpilog:
 		if (n->u[0].p != NULL) {
-			walk(n->u[0].p, parent); /* Do more redirections. */
+			WALK(n->u[0].p, parent); /* Do more redirections. */
 		}
 		qredir(n->u[1].p);
 		break;
