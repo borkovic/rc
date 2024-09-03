@@ -84,10 +84,13 @@ version.h: Makefile .git/index
 	@echo "CC $@"
 	$(CC) $(_CPPFLAGS) $(_CFLAGS) -o $@ $<
 
-check: trip
+check: trip testhist
 
 trip: rc tripping
 	./rc -p <"$(srcdir)/trip.rc"
+
+testhist: history
+	cd "$(srcdir)/test-history" && make
 
 acutest.h:; wget --compression=gzip https://raw.githubusercontent.com/mity/acutest/master/include/acutest.h
 
@@ -122,3 +125,7 @@ install: all
 	mkdir -p $(DESTDIR)$(MANPREFIX)/man1
 	cp rc.1 $(DESTDIR)$(MANPREFIX)/man1/
 	chmod 644 $(DESTDIR)$(MANPREFIX)/man1/rc.1
+	if [ -f history ]; then \
+		cp history.1 $(DESTDIR)$(MANPREFIX)/man1/ && \
+		chmod 644 $(DESTDIR)$(MANPREFIX)/man1/history.1; \
+	fi
