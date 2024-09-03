@@ -51,8 +51,16 @@ config.h:
 
 lex.o parse.o: parse.c
 
-.y.c:
-	@echo "GEN $@"
+YACC=byacc
+
+parse.c: parse.y
+	@echo "GEN $@": $(YACC) calc -b $* -d $<
+	$(YACC) -b $* -d $<
+	mv $*.tab.c $*.c
+	mv $*.tab.h $*.h
+
+calc.c: calc.y
+	@echo "GEN $@": $(YACC) -p calc -b $* -d $<
 	$(YACC) -p calc -b $* -d $<
 	mv $*.tab.c $*.c
 	mv $*.tab.h $*.h
