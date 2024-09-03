@@ -29,6 +29,5 @@ typedef union YYSTYPE {
 	CalcValue m_Val;
 } YYSTYPE;
 #endif /* !YYSTYPE_IS_DECLARED */
-extern YYSTYPE calclval;
 
 #endif /* _calc_defines_h_ */
