@@ -740,7 +740,7 @@ fn pathprefix { p1=() i=() j=() {
     return 0
 } }
 
-home=/user/users/rsalz
+home=/usr/users/rsalz
 z=/usr/users
 pathprefix /usr/users/rsalz home usr    # --> $home
 pathprefix /usr/users/rsalz z           # --> $z/rsalz
