@@ -319,15 +319,20 @@ submatch 'cat<<(eof eof)' 'rc: eof-marker not a single literal word' 'bad heredo
 # lexical analysis
 #
 
-if (test -x ./obj/tripping && test -x ./tripping) {
-    fail Have both ./obj/tripping and ./tripping
-} else if (test -x ./obj/tripping && ! test -x ./tripping) {
-    objDir=./obj
-} else if (! test -x ./obj/tripping && test -x ./tripping) {
-    objDir=.
+if (test -x ./obj/tripping) {
+    if (test -x ./tripping) {
+        fail Have both ./obj/tripping and ./tripping
+    } else {
+        objDir=./obj
+    }
 } else {
-    fail Have neither ./obj/tripping nor ./trippng
+    if (test -x ./tripping) {
+        objDir=.
+    } else {
+        fail Have neither ./obj/tripping nor ./tripping
+    }
 }
+
 expect warning
 $objDir/tripping 0 > $tmp
 $rc $tmp
