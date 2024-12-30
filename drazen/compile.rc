@@ -76,7 +76,7 @@ if (qMacOS) {
 }
 Debug=()
 ForceOpt=false
-Analyzer=false
+Analyzer=true
 
 ########################################################################################
 while (! ~ $#* 0) {
@@ -153,6 +153,8 @@ while (! ~ $#* 0) {
 		EditLibs = ()
 	case x--analyzer
 		Analyzer=true
+	case x--noanalyzer
+		Analyzer=false
 
 	case x-*
 		Fatal Bad option $1
