@@ -410,7 +410,7 @@ extern int n2u(const char *, unsigned int);
 extern int mvfd(int, int);
 extern int starstrcmp(const void *, const void *);
 extern void pr_error(const char *, int);
-extern void panic(const char *);
+extern void panic(const char *) __attribute__((noreturn));
 extern void uerror(const char *);
 
 /* wait.c */
