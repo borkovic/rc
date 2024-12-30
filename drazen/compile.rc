@@ -444,7 +444,11 @@ fn CompileWithOpts LinkWithOpts { cmd = () securityOpts = () allOpts = () {
 	if ($Verbose) {
 		echo $RunPfx $cmd
 	} else {
-		echo CC $*($#*)
+		if (~ $0 LinkWithOpts) {
+			echo LINK $*
+		} else {
+			echo CC $*($#*)
+		}
 	}
 	$cmd
 	if (! ~ $status 0) {
