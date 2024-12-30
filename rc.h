@@ -232,7 +232,7 @@ extern char *get_name(const char *);
 extern List *parse_var(const char *);
 extern Node *parse_fn(const char *);
 extern void initprint(void);
-extern void rc_exit(int); /* here for odd reasons; user-defined signal handlers are kept in fn.c */
+extern void rc_exit(int) __attribute__((noreturn)); /* here for odd reasons; user-defined signal handlers are kept in fn.c */
 
 /* getopt.c */
 extern int rc_getopt(int, char **, char *);
