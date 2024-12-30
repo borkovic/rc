@@ -248,7 +248,7 @@ if (! ~ $#Fortify 0) {
 		'-D_FORTIFY_SOURCE='$Fortify
 	)
 }
-if ($Analyzer) {
+if (! qMacOS && $Analyzer) {
 	SecurityCompileOpts = (
 		$SecurityCompileOpts
 		-fanalyzer
