@@ -248,11 +248,15 @@ if (! ~ $#Fortify 0) {
 		'-D_FORTIFY_SOURCE='$Fortify
 	)
 }
-if (! qMacOS && $Analyzer) {
-	SecurityCompileOpts = (
-		$SecurityCompileOpts
-		-fanalyzer
-	)
+if ($Analyzer) {
+	if (qMacOS) {
+		echo 'Warning: `--analyzer` only applied on Linux'
+	} else {
+		SecurityCompileOpts = (
+			$SecurityCompileOpts
+			-fanalyzer
+		)
+	}
 }
 
 if (qMacOS) {
