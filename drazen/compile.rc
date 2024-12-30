@@ -49,6 +49,7 @@ Options:
 	--editline
 	--vrl
 	--noedit
+	--analyzer
 EOF
 }
 
@@ -75,6 +76,7 @@ if (qMacOS) {
 }
 Debug=()
 ForceOpt=false
+Analyzer=false
 
 ########################################################################################
 while (! ~ $#* 0) {
@@ -149,6 +151,8 @@ while (! ~ $#* 0) {
 	case x--noedit
 		Edit = null
 		EditLibs = ()
+	case x--analyzer
+		Analyzer=true
 
 	case x-*
 		Fatal Bad option $1
@@ -242,6 +246,12 @@ if (! ~ $#Fortify 0) {
 	SecurityCompileOpts = (
 		$SecurityCompileOpts
 		'-D_FORTIFY_SOURCE='$Fortify
+	)
+}
+if ($Analyzer) {
+	SecurityCompileOpts = (
+		$SecurityCompileOpts
+		-fanalyzer
 	)
 }
 

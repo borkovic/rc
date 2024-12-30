@@ -17,6 +17,7 @@ static char *const aliases[] = {
 extern void varassign(const char *name, List *def, bool stack) {
 	if (streq(name, "random")) {
 		int val;
+        assert(def);
 		if (def->n) {
 			rc_error("Variable random cannot be assigned a list");
 			return;
