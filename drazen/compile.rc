@@ -464,7 +464,6 @@ headers = (
 	rc
 	rlimit
 	stat
-	version
 	wait
 )^.h
 if ($AddOn) {
@@ -476,7 +475,7 @@ if ($AddOn) {
 }
 
 ########################################################################################
-fn Compile LinkOneObj { file = $1 obj = () {
+fn Compile LinkOneObj { file = $1 obj = () all_headers = () {
 	if (~ $objDir ()) {
 		obj = $file.o
 		exe = $file
@@ -486,7 +485,12 @@ fn Compile LinkOneObj { file = $1 obj = () {
 	}
 	#--------------------------------------------------------------------
 	if (~ $0 Compile) {
-		if (! UpToDateMultiSrcs $obj $file.c $headers) {
+		if (~ $file main) {
+			all_headers = ($headers version.h)
+		} else {
+			all_headers = $headers
+		}
+		if (! UpToDateMultiSrcs $obj $file.c $all_headers) {
 			#CompileWithOpts   -MT $obj -MF .deps/$file.Tpo -c -o $obj $file.c
 			CompileWithOpts                                -c -o $obj $file.c
 		}
