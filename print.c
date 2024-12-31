@@ -285,13 +285,10 @@ extern int fmtprint(Format *format, const char *fmt,...) {
 
 	va_start(ap, fmt);
 	va_copy(saveargs, format->args);
-    va_end(format->args);
 	va_copy(format->args, ap);
-    va_end(ap);
 	n += printfmt(format, fmt);
 	va_end(format->args);
 	va_copy(format->args, saveargs);
-    va_end(saveargs);
 
 	return n + format->flushed;
 }
@@ -319,10 +316,10 @@ extern int fprint(int fd, const char *fmt,...) {
 
 	va_start(ap, fmt);
 	va_copy(format.args, ap);
-    va_end(ap);
 	printfmt(&format, fmt);
-	fprint_flush(&format, 0);
 	va_end(format.args);
+
+	fprint_flush(&format, 0);
 	return format.flushed;
 }
 
@@ -364,7 +361,6 @@ extern char *mprint(const char *fmt,...) {
 	format.u.n = 1;
 	va_start(ap, fmt);
 	va_copy(format.args, ap);
-    va_end(ap);
 	result = memprint(&format, fmt, ealloc(PRINT_ALLOCSIZE), PRINT_ALLOCSIZE);
 	va_end(format.args);
 	return result;
@@ -378,7 +374,6 @@ extern char *nprint(const char *fmt,...) {
 	format.u.n = 0;
 	va_start(ap, fmt);
 	va_copy(format.args, ap);
-    va_end(ap);
 	result = memprint(&format, fmt, nalloc(PRINT_ALLOCSIZE), PRINT_ALLOCSIZE);
 	va_end(format.args);
 	return result;
