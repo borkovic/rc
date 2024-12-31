@@ -1,5 +1,8 @@
 /* execve.c: an execve() for geriatric unices without #! */
 
+#include <errno.h>
+#include "rc.h"
+
 /*
    NOTE: this file depends on a hack in footobar.c which places two free
    spots before av[][] so that execve does not have to call malloc.

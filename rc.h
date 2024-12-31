@@ -209,11 +209,11 @@ extern char *compl_builtin(const char *, int);
 extern bool nl_on_intr;
 extern bool outstanding_cmdarg(void);
 extern void pop_cmdarg(bool);
-extern void rc_raise(ecodes);
+extern void rc_raise(ecodes) __attribute__((noreturn));
 extern void except(ecodes, Edata, Estack *);
 extern void unexcept(ecodes);
 extern void clearflow(void);
-extern void rc_error(const char *);
+extern void rc_error(const char *) __attribute__((noreturn));
 extern void sigint(int);
 
 /* exec.c */
@@ -354,8 +354,10 @@ extern int yyparse(void);
 extern void initparse(void);
 
 /* readline */
+/*
 extern volatile sig_atomic_t rl_active;
 extern struct Jbwrap rl_buf;
+*/
 
 /* redir.c */
 extern void doredirs(void);

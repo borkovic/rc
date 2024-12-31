@@ -1,8 +1,10 @@
 /* signal-safe read and write (for BSD slow devices). writeall() also
 allows partial writes */
 
+#include <sys/types.h>
 #include <errno.h>
 
+#include "fwrap.h"
 #include "jbwrap.h"
 #include "wait.h"
 

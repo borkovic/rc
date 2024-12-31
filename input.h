@@ -1,5 +1,8 @@
 #ifndef INPUT_H_INCLUDE
 #define INPUT_H_INCLUDE
+
+#include "rc.h"
+
 /* initialize the input stack */
 extern void initinput(void);
 
