@@ -49,6 +49,25 @@ if (false) {					# WARNING: this differs from sh
 	if (!~ $x(3) 6) fail rc -c reports '$#' incorrectly as $x(3)
 }
 
+#
+# subscripts
+#
+
+x = (a b c d e f)
+submatch 'echo $x(1-)' 'a b c d e f' 'bad subscript 1'
+submatch 'echo $x(1-1)' 'a' 'bad subscript 2'
+submatch 'echo $x(1-3)' 'a b c' 'bad subscript 3'
+submatch 'echo $x(5-6)' 'e f' 'bad subscript 4'
+submatch 'echo $x(-3)' 'rc: bad subscript' 'bad subscript 5'
+submatch 'echo $x(5-2)' 'rc: bad subscript' 'bad subscript 6'
+submatch 'echo $x(1--2)' 'rc: bad subscript' 'bad subscript 7'
+submatch 'echo $x(0-9)' 'rc: bad subscript' 'bad subscript 8'
+submatch 'echo $x(2-0)' 'rc: bad subscript' 'bad subscript 9'
+submatch 'echo $x(1 1 3-4 6)' 'a a c d f' 'bad subscript 10'
+submatch 'echo $x(5-6 1-2 9999999999999999)' 'e f a b' 'bad subscript 11'
+submatch 'echo $x(1:5)' 'rc: bad subscript' 'bad subscript 12'
+
+
 ######################################################################
 ## Testing builtin calc.
 ######################################################################

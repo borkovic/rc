@@ -1140,15 +1140,25 @@ arguments may be referred to as
 .Cr "$2" ,
 and so on.
 .PP
-Note also that the list of subscripts may be given by any of
-.IR rc 's
-list operations:
+Subscripts can also be expressed as a range with the notation
 .Ds
-.Cr "$var(\`{awk 'BEGIN{for(i=1;i<=10;i++)print i;exit; }'})"
+.Ci $var( m-n )
+or
+.Ci $var( m- )
 .De
 .PP
-returns the first 10 elements of
-.Cr $var .
+where
+.I m
+is the origin and
+.I n
+is the last index to select. If
+.I n
+is ommited, all the elements after
+.I m
+(included) are selected.
+.I n
+is not allowed to be inferior to
+.IR m .
 .PP
 To count the number of elements in a variable, use
 .Ds

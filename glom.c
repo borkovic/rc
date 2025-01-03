@@ -89,27 +89,83 @@ extern List *concat(List *s1, List *s2) {
 	return top;
 }
 
+static void bad_subscript(void) {
+	rc_error("bad subscript");
+}
+
+static int parse_index(char *word) {
+	int i;
+	i = a2u(word);
+	if (i < 1) {
+		bad_subscript();
+    }
+	return i;
+}
+
+/* Parse a variable subscript, whether is a range ($from-$to) or an index. */
+static void parse_subscript(char *word, int n, int *from, int *to) {
+	char *dash = strchr(word, '-');
+
+	/* No '-' found, this is just an index number. */
+	if (dash == NULL) {
+		*from = *to = parse_index(word);
+		return;
+	}
+	/* '-' found at the start. We do not accept negative numbers. */
+	if (dash == word) {
+		bad_subscript();
+	}
+	/* Make sure there is only 1 '-'. */
+	if (strchr(dash+1, '-') != NULL) {
+		bad_subscript();
+	}
+
+	*dash = '\0';
+	*from = parse_index(word);
+	char *t = dash + 1;
+	*to = (*t == '\0') ? n : parse_index(t);
+	*dash = '-';
+
+	if (*to > n) {
+		*to = n;
+	}
+	if (*to < *from) {
+		bad_subscript();
+	}
+}
+
 extern List *varsub(List *var, List *subs) {
 	List *r, *top;
+    int from, to;
+
 	int n = listnel(var);
+
 	for (top = r = NULL; subs != NULL; subs = subs->n) {
-		int i = a2u(subs->w);
-		if (i < 1)
-			rc_error("bad subscript");
-		if (i <= n) {
-			List *sub = var;
-			while (--i)
-				sub = sub->n; /* loop until sub == var(i) */
-			if (top == NULL)
+		parse_subscript(subs->w, n, &from, &to);
+		if (from > n) {
+			continue;
+		}
+
+		List *sub = var;
+		int range = to - from + 1;
+		while (--from) {
+			sub = sub->n; /* loop until sub == var(from) */
+		}
+
+		while (range--) {
+			if (top == NULL) {
 				top = r = nnew(List);
-			else
+			} else {
 				r = r->n = nnew(List);
+			}
 			r->w = sub->w;
 			r->m = sub->m;
+            sub = sub->n;
 		}
 	}
-	if (top != NULL)
+	if (top != NULL) {
 		r->n = NULL;
+	}
 	return top;
 }
 
