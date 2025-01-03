@@ -151,9 +151,9 @@ while (! ~ $#* 0) {
 	case x--noedit
 		Edit = null
 		EditLibs = ()
-	case x--analyzer
+	case x--analyzer x--analyze
 		Analyzer=true
-	case x--noanalyzer
+	case x--noanalyzer x--noanalyze
 		Analyzer=false
 
 	case x-*
