@@ -331,6 +331,7 @@ if (~ $v ()) {
 	v = v1.7.4
 }
 {
+	echo '#undef VERSION'
 	echo '#ifndef VERSION'
 	echo '#define VERSION "'$v'"'
 	echo '#endif'
