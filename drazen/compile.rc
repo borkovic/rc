@@ -326,7 +326,10 @@ CompileOpts = (
 	-DDESCRIPTION^'="'^$GIT_COMMIT^'"'
 )
 srcdir = .
-v=${cd $srcdir && git describe --always >[2]/dev/null || true}
+v=${cd $srcdir &&
+    git describe --exclude '*' --always --abbrev=16 >[2]/dev/null ||
+	true}
+v=rc-$v
 if (~ $v ()) {
 	v = v1.7.4
 }
