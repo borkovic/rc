@@ -63,7 +63,7 @@ extern void doredirs() {
 			}
 			break;
 		case nDup:
-			if (r->r->u[2].i == -1)
+			if (r->r->u[2].i == -1) /* CLOSED in lex.c */
 				close(r->r->u[1].i);
 			else if (r->r->u[2].i != r->r->u[1].i) {
 				if (dup2(r->r->u[2].i, r->r->u[1].i) < 0) {
