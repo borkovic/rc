@@ -14,7 +14,7 @@ extern Node *mk(enum nodetype t,...) {
 		/* NOTREACHED */
 	case nDup:
 		n = nalloc(offsetof(Node, u[3]));
-		n->u[0].i = va_arg(ap, int);
+		n->u[0].i = va_arg(ap, redirtype);
 		n->u[1].i = va_arg(ap, int);
 		n->u[2].i = va_arg(ap, int);
 		break;
@@ -54,7 +54,7 @@ extern Node *mk(enum nodetype t,...) {
 	case nRedir:
 	case nNmpipe:
 		n = nalloc(offsetof(Node, u[3]));
-		n->u[0].i = va_arg(ap, int);
+		n->u[0].i = va_arg(ap, redirtype);
 		n->u[1].i = va_arg(ap, int);
 		n->u[2].p = va_arg(ap, Node *);
 		break;
