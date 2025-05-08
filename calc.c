@@ -5,7 +5,7 @@
 #define YYBYACC 1
 #define YYMAJOR 2
 #define YYMINOR 0
-#define YYPATCH 20230521
+#define YYPATCH 20241231
 
 #define YYEMPTY        (-1)
 #define yyclearin      (yychar = YYEMPTY)
@@ -543,17 +543,29 @@ static const YYINT calcctable[] = {                      -1,
 #define YYUNDFTOKEN 274
 #define YYTRANSLATE(a) ((a) > YYMAXTOKEN ? YYUNDFTOKEN : (a))
 #if YYDEBUG
+#ifndef NULL
+#define NULL (void*)0
+#endif
 static const char *const calcname[] = {
 
-"$end",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"'!'",0,
-0,0,"'%'","'&'",0,"'('","')'","'*'","'+'",0,"'-'",0,"'/'",0,0,0,0,0,0,0,0,0,0,0,
-0,"'<'","'='","'>'",0,"'@'",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,"'^'",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"'|'",0,
-"'~'",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,"error","CALC_OROR","CALC_ANDAND","CALC_EQEQ",
-"CALC_NEQ","CALC_LEQ","CALC_GEQ","CALC_LSHIFT","CALC_RSHIFT",
+"$end",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,"'!'",NULL,NULL,NULL,"'%'","'&'",NULL,"'('","')'","'*'","'+'",NULL,
+"'-'",NULL,"'/'",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+"'<'","'='","'>'",NULL,"'@'",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,"'^'",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,"'|'",NULL,"'~'",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,"error","CALC_OROR","CALC_ANDAND",
+"CALC_EQEQ","CALC_NEQ","CALC_LEQ","CALC_GEQ","CALC_LSHIFT","CALC_RSHIFT",
 "CALC_UNARY_PLUSMINUS","CALC_NUMBER","CALC_VAR","CALC_END_TOKEN",
 "CALC_BAD_TOKEN","$accept","calc","expr","assignment","illegal-symbol",
 };
@@ -671,7 +683,7 @@ typedef struct YYParseState_s YYParseState;
 /*
 */
 
-#line 675 "calc.c"
+#line 687 "calc.c"
 
 /* For use in generated program */
 #define yydepth (int)(yystack.s_mark - yystack.s_base)
@@ -706,14 +718,14 @@ static int yygrowstack(YYSTACKDATA *data)
 
     i = (int) (data->s_mark - data->s_base);
     newss = (YYINT *)realloc(data->s_base, newsize * sizeof(*newss));
-    if (newss == 0)
+    if (newss == NULL)
         return YYENOMEM;
 
     data->s_base = newss;
     data->s_mark = newss + i;
 
     newvs = (YYSTYPE *)realloc(data->l_base, newsize * sizeof(*newvs));
-    if (newvs == 0)
+    if (newvs == NULL)
         return YYENOMEM;
 
     data->l_base = newvs;
@@ -721,7 +733,7 @@ static int yygrowstack(YYSTACKDATA *data)
 
 #if defined(YYLTYPE) || defined(YYLTYPE_IS_DECLARED)
     newps = (YYLTYPE *)realloc(data->p_base, newsize * sizeof(*newps));
-    if (newps == 0)
+    if (newps == NULL)
         return YYENOMEM;
 
     data->p_base = newps;
@@ -821,41 +833,41 @@ YYPARSE_DECL()
 #if YYBTYACC
 
     /* Current parser state */
-    static YYParseState *yyps = 0;
+    static YYParseState *yyps = NULL;
 
     /* yypath != NULL: do the full parse, starting at *yypath parser state. */
-    static YYParseState *yypath = 0;
+    static YYParseState *yypath = NULL;
 
     /* Base of the lexical value queue */
-    static YYSTYPE *yylvals = 0;
+    static YYSTYPE *yylvals = NULL;
 
     /* Current position at lexical value queue */
-    static YYSTYPE *yylvp = 0;
+    static YYSTYPE *yylvp = NULL;
 
     /* End position of lexical value queue */
-    static YYSTYPE *yylve = 0;
+    static YYSTYPE *yylve = NULL;
 
     /* The last allocated position at the lexical value queue */
-    static YYSTYPE *yylvlim = 0;
+    static YYSTYPE *yylvlim = NULL;
 
 #if defined(YYLTYPE) || defined(YYLTYPE_IS_DECLARED)
     /* Base of the lexical position queue */
-    static YYLTYPE *yylpsns = 0;
+    static YYLTYPE *yylpsns = NULL;
 
     /* Current position at lexical position queue */
-    static YYLTYPE *yylpp = 0;
+    static YYLTYPE *yylpp = NULL;
 
     /* End position of lexical position queue */
-    static YYLTYPE *yylpe = 0;
+    static YYLTYPE *yylpe = NULL;
 
     /* The last allocated position at the lexical position queue */
-    static YYLTYPE *yylplim = 0;
+    static YYLTYPE *yylplim = NULL;
 #endif
 
     /* Current position at lexical token queue */
-    static YYINT  *yylexp = 0;
+    static YYINT  *yylexp = NULL;
 
-    static YYINT  *yylexemes = 0;
+    static YYINT  *yylexemes = NULL;
 #endif /* YYBTYACC */
     int yym, yyn, yystate, yyresult;
 #if YYBTYACC
@@ -868,7 +880,7 @@ YYPARSE_DECL()
 #if YYDEBUG
     const char *yys;
 
-    if ((yys = getenv("YYDEBUG")) != 0)
+    if ((yys = getenv("YYDEBUG")) != NULL)
     {
         yyn = *yys;
         if (yyn >= '0' && yyn <= '9')
@@ -891,8 +903,8 @@ YYPARSE_DECL()
 #endif
 
 #if YYBTYACC
-    yyps = yyNewState(0); if (yyps == 0) goto yyenomem;
-    yyps->save = 0;
+    yyps = yyNewState(0); if (yyps == NULL) goto yyenomem;
+    yyps->save = NULL;
 #endif /* YYBTYACC */
     yym = 0;
     /* yyn is set below */
@@ -1408,105 +1420,105 @@ case 1:
 	{	assert('\0' == lexData->m_Indent[0]);
 			lexData->m_CalcResult = yystack.l_mark[0].m_Val;
 		}
-#line 1412 "calc.c"
+#line 1424 "calc.c"
 break;
 case 2:
 #line 73 "calc.y"
 	{	assert('\0' != lexData->m_Indent[0]);
 			lexData->m_CalcResult = yystack.l_mark[0].m_Val;
 		}
-#line 1419 "calc.c"
+#line 1431 "calc.c"
 break;
 case 3:
 #line 80 "calc.y"
 	{	assert('\0' != lexData->m_Indent[0]);
 			yyval.m_Val = yystack.l_mark[0].m_Val;
 		}
-#line 1426 "calc.c"
+#line 1438 "calc.c"
 break;
 case 4:
 #line 85 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val || yystack.l_mark[0].m_Val; }
-#line 1431 "calc.c"
+#line 1443 "calc.c"
 break;
 case 5:
 #line 86 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val && yystack.l_mark[0].m_Val; }
-#line 1436 "calc.c"
+#line 1448 "calc.c"
 break;
 case 6:
 #line 87 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val | yystack.l_mark[0].m_Val; }
-#line 1441 "calc.c"
+#line 1453 "calc.c"
 break;
 case 7:
 #line 88 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val ^ yystack.l_mark[0].m_Val; }
-#line 1446 "calc.c"
+#line 1458 "calc.c"
 break;
 case 8:
 #line 89 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val & yystack.l_mark[0].m_Val; }
-#line 1451 "calc.c"
+#line 1463 "calc.c"
 break;
 case 9:
 #line 90 "calc.y"
 	{ yyval.m_Val = (yystack.l_mark[-2].m_Val == yystack.l_mark[0].m_Val); }
-#line 1456 "calc.c"
+#line 1468 "calc.c"
 break;
 case 10:
 #line 91 "calc.y"
 	{ yyval.m_Val = (yystack.l_mark[-2].m_Val != yystack.l_mark[0].m_Val); }
-#line 1461 "calc.c"
+#line 1473 "calc.c"
 break;
 case 11:
 #line 92 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val > yystack.l_mark[0].m_Val; }
-#line 1466 "calc.c"
+#line 1478 "calc.c"
 break;
 case 12:
 #line 93 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val < yystack.l_mark[0].m_Val; }
-#line 1471 "calc.c"
+#line 1483 "calc.c"
 break;
 case 13:
 #line 94 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val <= yystack.l_mark[0].m_Val; }
-#line 1476 "calc.c"
+#line 1488 "calc.c"
 break;
 case 14:
 #line 95 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val >= yystack.l_mark[0].m_Val; }
-#line 1481 "calc.c"
+#line 1493 "calc.c"
 break;
 case 15:
 #line 97 "calc.y"
 	{	const CalcValue v3 = yystack.l_mark[0].m_Val;
 			yyval.m_Val = (v3 >= 0) ? (yystack.l_mark[-2].m_Val << v3) : (yystack.l_mark[-2].m_Val >> (-v3));
 		}
-#line 1488 "calc.c"
+#line 1500 "calc.c"
 break;
 case 16:
 #line 101 "calc.y"
 	{	const CalcValue v3 = yystack.l_mark[0].m_Val;
 			yyval.m_Val = (v3>=0) ? (yystack.l_mark[-2].m_Val >> v3) : (yystack.l_mark[-2].m_Val << (-v3));
 		}
-#line 1495 "calc.c"
+#line 1507 "calc.c"
 break;
 case 17:
 #line 104 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val + yystack.l_mark[0].m_Val; }
-#line 1500 "calc.c"
+#line 1512 "calc.c"
 break;
 case 18:
 #line 105 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val - yystack.l_mark[0].m_Val; }
-#line 1505 "calc.c"
+#line 1517 "calc.c"
 break;
 case 19:
 #line 106 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val * yystack.l_mark[0].m_Val; }
-#line 1510 "calc.c"
+#line 1522 "calc.c"
 break;
 case 20:
 #line 108 "calc.y"
@@ -1517,7 +1529,7 @@ case 20:
 			}
 			yyval.m_Val = yystack.l_mark[-2].m_Val / (v3);
 		}
-#line 1521 "calc.c"
+#line 1533 "calc.c"
 break;
 case 21:
 #line 116 "calc.y"
@@ -1528,27 +1540,27 @@ case 21:
 			}
 			yyval.m_Val = yystack.l_mark[-2].m_Val % (v3);
 		}
-#line 1532 "calc.c"
+#line 1544 "calc.c"
 break;
 case 22:
 #line 123 "calc.y"
 	{ yyval.m_Val = !yystack.l_mark[0].m_Val; }
-#line 1537 "calc.c"
+#line 1549 "calc.c"
 break;
 case 23:
 #line 124 "calc.y"
 	{ yyval.m_Val = ~yystack.l_mark[0].m_Val; }
-#line 1542 "calc.c"
+#line 1554 "calc.c"
 break;
 case 24:
 #line 125 "calc.y"
 	{ yyval.m_Val = -yystack.l_mark[0].m_Val; }
-#line 1547 "calc.c"
+#line 1559 "calc.c"
 break;
 case 25:
 #line 126 "calc.y"
 	{ yyval.m_Val = +yystack.l_mark[0].m_Val; }
-#line 1552 "calc.c"
+#line 1564 "calc.c"
 break;
 case 26:
 #line 128 "calc.y"
@@ -1559,19 +1571,19 @@ case 26:
 			}
 			yyval.m_Val = CalcPower(yystack.l_mark[-2].m_Val, v3);
 		}
-#line 1563 "calc.c"
+#line 1575 "calc.c"
 break;
 case 27:
 #line 135 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-1].m_Val; }
-#line 1568 "calc.c"
+#line 1580 "calc.c"
 break;
 case 28:
 #line 136 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[0].m_Val; }
-#line 1573 "calc.c"
+#line 1585 "calc.c"
 break;
-#line 1575 "calc.c"
+#line 1587 "calc.c"
     default:
         break;
     }

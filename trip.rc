@@ -1039,6 +1039,21 @@ submatch 'flag c && echo yes' yes 'flag c'
 submatch 'flag x +; flag x -' 'flag x -' 'setting x flag'
 
 #############################################################################
+# test for github issue #115
+
+touch .j .k
+x = (.[~.])
+if (! ~ $#x 2) {
+	fail 'Pattern ".[~.]" should match 2 values (.j, .k)': $x
+}
+if (! ~ $^x '.j .k' '.k .j') {
+	fail 'Pattern ".[~.]" should match values (.j, .k)': '<'$^x'>'
+}
+
+rm -f .j .k
+x=()
+
+#############################################################################
 if (! true) {
 	fail '"true" exits with non-zero status'
 }

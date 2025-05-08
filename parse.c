@@ -5,7 +5,7 @@
 #define YYBYACC 1
 #define YYMAJOR 2
 #define YYMINOR 0
-#define YYPATCH 20230521
+#define YYPATCH 20241231
 
 #define YYEMPTY        (-1)
 #define yyclearin      (yychar = YYEMPTY)
@@ -725,21 +725,34 @@ static const YYINT yyctable[] = {                        -1,
 #define YYUNDFTOKEN 311
 #define YYTRANSLATE(a) ((a) > YYMAXTOKEN ? YYUNDFTOKEN : (a))
 #if YYDEBUG
+#ifndef NULL
+#define NULL (void*)0
+#endif
 static const char *const yyname[] = {
 
-"$end",0,0,0,0,0,0,0,0,0,"'\\n'",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,"'$'",0,"'&'",0,"'('","')'",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"';'",0,"'='",
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"'^'",0,"'`'",0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"'{'",0,"'}'",0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,"error","ANDAND","BACKBACK","BANG","CASE","COUNT","DUP","ELSE","END","FLAT",
-"FN","FOR","IF","IN","OROR","PIPE","REDIR","SREDIR","SUB","SUBSHELL","SWITCH",
-"TWIDDLE","WHILE","WORD","HUH","PREDIR","$accept","rc","keyword","assign",
-"body","brace","case","cbody","cmd","cmdsa","cmdsan","comword","epilog","first",
-"line","nlwords","paren","redir","sword","simple","iftail","word","words","arg",
-"args","else","end","optcaret","optnl","illegal-symbol",
+"$end",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,"'\\n'",NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,"'$'",NULL,"'&'",NULL,"'('","')'",NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,"';'",NULL,
+"'='",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,"'^'",NULL,"'`'",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+"'{'",NULL,"'}'",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+NULL,NULL,NULL,NULL,NULL,NULL,"error","ANDAND","BACKBACK","BANG","CASE","COUNT",
+"DUP","ELSE","END","FLAT","FN","FOR","IF","IN","OROR","PIPE","REDIR","SREDIR",
+"SUB","SUBSHELL","SWITCH","TWIDDLE","WHILE","WORD","HUH","PREDIR","$accept",
+"rc","keyword","assign","body","brace","case","cbody","cmd","cmdsa","cmdsan",
+"comword","epilog","first","line","nlwords","paren","redir","sword","simple",
+"iftail","word","words","arg","args","else","end","optcaret","optnl",
+"illegal-symbol",
 };
 static const char *const yyrule[] = {
 "$accept : rc",
@@ -929,41 +942,41 @@ static YYSTACKDATA yystack;
 #if YYBTYACC
 
 /* Current parser state */
-static YYParseState *yyps = 0;
+static YYParseState *yyps = NULL;
 
 /* yypath != NULL: do the full parse, starting at *yypath parser state. */
-static YYParseState *yypath = 0;
+static YYParseState *yypath = NULL;
 
 /* Base of the lexical value queue */
-static YYSTYPE *yylvals = 0;
+static YYSTYPE *yylvals = NULL;
 
 /* Current position at lexical value queue */
-static YYSTYPE *yylvp = 0;
+static YYSTYPE *yylvp = NULL;
 
 /* End position of lexical value queue */
-static YYSTYPE *yylve = 0;
+static YYSTYPE *yylve = NULL;
 
 /* The last allocated position at the lexical value queue */
-static YYSTYPE *yylvlim = 0;
+static YYSTYPE *yylvlim = NULL;
 
 #if defined(YYLTYPE) || defined(YYLTYPE_IS_DECLARED)
 /* Base of the lexical position queue */
-static YYLTYPE *yylpsns = 0;
+static YYLTYPE *yylpsns = NULL;
 
 /* Current position at lexical position queue */
-static YYLTYPE *yylpp = 0;
+static YYLTYPE *yylpp = NULL;
 
 /* End position of lexical position queue */
-static YYLTYPE *yylpe = 0;
+static YYLTYPE *yylpe = NULL;
 
 /* The last allocated position at the lexical position queue */
-static YYLTYPE *yylplim = 0;
+static YYLTYPE *yylplim = NULL;
 #endif
 
 /* Current position at lexical token queue */
-static YYINT  *yylexp = 0;
+static YYINT  *yylexp = NULL;
 
-static YYINT  *yylexemes = 0;
+static YYINT  *yylexemes = NULL;
 #endif /* YYBTYACC */
 #line 182 "parse.y"
 
@@ -972,7 +985,7 @@ void initparse() {
 	nolist = treecpy(mk(nVar, mk(nWord,"ifs", NULL, FALSE)), ealloc);
 }
 
-#line 976 "parse.c"
+#line 989 "parse.c"
 
 /* For use in generated program */
 #define yydepth (int)(yystack.s_mark - yystack.s_base)
@@ -1007,14 +1020,14 @@ static int yygrowstack(YYSTACKDATA *data)
 
     i = (int) (data->s_mark - data->s_base);
     newss = (YYINT *)realloc(data->s_base, newsize * sizeof(*newss));
-    if (newss == 0)
+    if (newss == NULL)
         return YYENOMEM;
 
     data->s_base = newss;
     data->s_mark = newss + i;
 
     newvs = (YYSTYPE *)realloc(data->l_base, newsize * sizeof(*newvs));
-    if (newvs == 0)
+    if (newvs == NULL)
         return YYENOMEM;
 
     data->l_base = newvs;
@@ -1022,7 +1035,7 @@ static int yygrowstack(YYSTACKDATA *data)
 
 #if defined(YYLTYPE) || defined(YYLTYPE_IS_DECLARED)
     newps = (YYLTYPE *)realloc(data->p_base, newsize * sizeof(*newps));
-    if (newps == 0)
+    if (newps == NULL)
         return YYENOMEM;
 
     data->p_base = newps;
@@ -1116,7 +1129,7 @@ YYPARSE_DECL()
 #if YYDEBUG
     const char *yys;
 
-    if ((yys = getenv("YYDEBUG")) != 0)
+    if ((yys = getenv("YYDEBUG")) != NULL)
     {
         yyn = *yys;
         if (yyn >= '0' && yyn <= '9')
@@ -1130,8 +1143,8 @@ YYPARSE_DECL()
 #endif
 
 #if YYBTYACC
-    yyps = yyNewState(0); if (yyps == 0) goto yyenomem;
-    yyps->save = 0;
+    yyps = yyNewState(0); if (yyps == NULL) goto yyenomem;
+    yyps->save = NULL;
 #endif /* YYBTYACC */
     yym = 0;
     /* yyn is set below */
@@ -1645,378 +1658,378 @@ yyreduce:
 case 1:
 #line 53 "parse.y"
 	{ parsetree = yystack.l_mark[-1].node; YYACCEPT; }
-#line 1649 "parse.c"
+#line 1662 "parse.c"
 break;
 case 2:
 #line 54 "parse.y"
 	{ yyerrok; parsetree = NULL; YYABORT; }
-#line 1654 "parse.c"
+#line 1667 "parse.c"
 break;
 case 3:
 #line 57 "parse.y"
 	{ if (!heredoc(1)) YYABORT; }
-#line 1659 "parse.c"
+#line 1672 "parse.c"
 break;
 case 4:
 #line 58 "parse.y"
 	{ if (!heredoc(0)) YYABORT; }
-#line 1664 "parse.c"
+#line 1677 "parse.c"
 break;
 case 6:
 #line 62 "parse.y"
 	{ yyval.node = (yystack.l_mark[-1].node != NULL ? mk(nNowait,yystack.l_mark[-1].node) : yystack.l_mark[-1].node); }
-#line 1669 "parse.c"
+#line 1682 "parse.c"
 break;
 case 8:
 #line 66 "parse.y"
 	{ yyval.node = (yystack.l_mark[-1].node != NULL ? mk(nBody,yystack.l_mark[-1].node,yystack.l_mark[0].node) : yystack.l_mark[0].node); }
-#line 1674 "parse.c"
+#line 1687 "parse.c"
 break;
 case 10:
 #line 70 "parse.y"
 	{ yyval.node = (yystack.l_mark[-1].node == NULL ? yystack.l_mark[0].node : yystack.l_mark[0].node == NULL ? yystack.l_mark[-1].node : mk(nBody,yystack.l_mark[-1].node,yystack.l_mark[0].node)); }
-#line 1679 "parse.c"
+#line 1692 "parse.c"
 break;
 case 12:
 #line 73 "parse.y"
 	{ yyval.node = yystack.l_mark[-1].node; if (!heredoc(0)) YYABORT; }
-#line 1684 "parse.c"
+#line 1697 "parse.c"
 break;
 case 13:
 #line 75 "parse.y"
 	{ yyval.node = yystack.l_mark[-1].node; }
-#line 1689 "parse.c"
+#line 1702 "parse.c"
 break;
 case 14:
 #line 77 "parse.y"
 	{ yyval.node = yystack.l_mark[-1].node; }
-#line 1694 "parse.c"
+#line 1707 "parse.c"
 break;
 case 15:
 #line 79 "parse.y"
 	{ yyval.node = mk(nAssign,yystack.l_mark[-4].node,yystack.l_mark[0].node); }
-#line 1699 "parse.c"
+#line 1712 "parse.c"
 break;
 case 16:
 #line 81 "parse.y"
 	{ yyval.node = NULL; }
-#line 1704 "parse.c"
+#line 1717 "parse.c"
 break;
 case 17:
 #line 82 "parse.y"
 	{ yyval.node = mk(nEpilog,yystack.l_mark[-1].node,yystack.l_mark[0].node); }
-#line 1709 "parse.c"
+#line 1722 "parse.c"
 break;
 case 18:
 #line 85 "parse.y"
 	{ yyval.node = mk(nDup,yystack.l_mark[0].dup.type,yystack.l_mark[0].dup.left,yystack.l_mark[0].dup.right); }
-#line 1714 "parse.c"
+#line 1727 "parse.c"
 break;
 case 19:
 #line 86 "parse.y"
 	{ yyval.node = mk(nRedir,yystack.l_mark[-1].redir.type,yystack.l_mark[-1].redir.fd,yystack.l_mark[0].node);
 				  if (yystack.l_mark[-1].redir.type == rHeredoc && !qdoc(yystack.l_mark[0].node, yyval.node)) YYABORT; /* queue heredocs up */
 				}
-#line 1721 "parse.c"
+#line 1734 "parse.c"
 break;
 case 20:
 #line 89 "parse.y"
 	{ yyval.node = mk(nRedir,yystack.l_mark[-1].redir.type,yystack.l_mark[-1].redir.fd,yystack.l_mark[0].node);
 				  if (yystack.l_mark[-1].redir.type == rHeredoc && !qdoc(yystack.l_mark[0].node, yyval.node)) YYABORT; /* queue heredocs up */
 				}
-#line 1728 "parse.c"
+#line 1741 "parse.c"
 break;
 case 21:
 #line 93 "parse.y"
 	{ yyval.node = mk(nCase, yystack.l_mark[-1].node); }
-#line 1733 "parse.c"
+#line 1746 "parse.c"
 break;
 case 22:
 #line 94 "parse.y"
 	{ yyval.node = mk(nCase, yystack.l_mark[-1].node); }
-#line 1738 "parse.c"
+#line 1751 "parse.c"
 break;
 case 23:
 #line 96 "parse.y"
 	{ yyval.node = mk(nCbody, yystack.l_mark[0].node, NULL); }
-#line 1743 "parse.c"
+#line 1756 "parse.c"
 break;
 case 24:
 #line 97 "parse.y"
 	{ yyval.node = mk(nCbody, yystack.l_mark[-1].node, yystack.l_mark[0].node); }
-#line 1748 "parse.c"
+#line 1761 "parse.c"
 break;
 case 25:
 #line 98 "parse.y"
 	{ yyval.node = mk(nCbody, yystack.l_mark[-1].node, yystack.l_mark[0].node); }
-#line 1753 "parse.c"
+#line 1766 "parse.c"
 break;
 case 26:
 #line 100 "parse.y"
 	{ yyval.node = yystack.l_mark[0].node != NULL ? mk(nElse, yystack.l_mark[-1].node, yystack.l_mark[0].node) : yystack.l_mark[-1].node; }
-#line 1758 "parse.c"
+#line 1771 "parse.c"
 break;
 case 27:
 #line 102 "parse.y"
 	{ yyval.node = NULL; }
-#line 1763 "parse.c"
+#line 1776 "parse.c"
 break;
 case 28:
 #line 103 "parse.y"
 	{ yyval.node = yystack.l_mark[0].node; }
-#line 1768 "parse.c"
+#line 1781 "parse.c"
 break;
 case 29:
 #line 105 "parse.y"
 	{ yyval.node = NULL; }
-#line 1773 "parse.c"
+#line 1786 "parse.c"
 break;
 case 31:
 #line 107 "parse.y"
 	{ yyval.node = mk(nBrace,yystack.l_mark[-1].node,yystack.l_mark[0].node); }
-#line 1778 "parse.c"
+#line 1791 "parse.c"
 break;
 case 32:
 #line 108 "parse.y"
 	{ yyval.node = mk(nIf,yystack.l_mark[-2].node,yystack.l_mark[0].node); }
-#line 1783 "parse.c"
+#line 1796 "parse.c"
 break;
 case 33:
 #line 109 "parse.y"
 	{ yyval.node = mk(nForin,yystack.l_mark[-5].node,yystack.l_mark[-3].node,yystack.l_mark[0].node); }
-#line 1788 "parse.c"
+#line 1801 "parse.c"
 break;
 case 34:
 #line 110 "parse.y"
 	{ yyval.node = mk(nForin,yystack.l_mark[-3].node,star,yystack.l_mark[0].node); }
-#line 1793 "parse.c"
+#line 1806 "parse.c"
 break;
 case 35:
 #line 111 "parse.y"
 	{ yyval.node = mk(nWhile,yystack.l_mark[-2].node,yystack.l_mark[0].node); }
-#line 1798 "parse.c"
+#line 1811 "parse.c"
 break;
 case 36:
 #line 112 "parse.y"
 	{ yyval.node = mk(nSwitch,yystack.l_mark[-5].node,yystack.l_mark[-1].node); }
-#line 1803 "parse.c"
+#line 1816 "parse.c"
 break;
 case 37:
 #line 113 "parse.y"
 	{ yyval.node = mk(nMatch,yystack.l_mark[-1].node,yystack.l_mark[0].node); }
-#line 1808 "parse.c"
+#line 1821 "parse.c"
 break;
 case 38:
 #line 114 "parse.y"
 	{ yyval.node = mk(nAndalso,yystack.l_mark[-3].node,yystack.l_mark[0].node); }
-#line 1813 "parse.c"
+#line 1826 "parse.c"
 break;
 case 39:
 #line 115 "parse.y"
 	{ yyval.node = mk(nOrelse,yystack.l_mark[-3].node,yystack.l_mark[0].node); }
-#line 1818 "parse.c"
+#line 1831 "parse.c"
 break;
 case 40:
 #line 116 "parse.y"
 	{ yyval.node = mk(nPipe,yystack.l_mark[-2].pipe.left,yystack.l_mark[-2].pipe.right,yystack.l_mark[-3].node,yystack.l_mark[0].node); }
-#line 1823 "parse.c"
+#line 1836 "parse.c"
 break;
 case 41:
 #line 117 "parse.y"
 	{ yyval.node = (yystack.l_mark[0].node != NULL ? mk(nPre,yystack.l_mark[-1].node,yystack.l_mark[0].node) : yystack.l_mark[-1].node); }
-#line 1828 "parse.c"
+#line 1841 "parse.c"
 break;
 case 42:
 #line 118 "parse.y"
 	{ yyval.node = (yystack.l_mark[0].node != NULL ? mk(nPre,yystack.l_mark[-1].node,yystack.l_mark[0].node) : yystack.l_mark[-1].node); }
-#line 1833 "parse.c"
+#line 1846 "parse.c"
 break;
 case 43:
 #line 119 "parse.y"
 	{ yyval.node = mk(nBang,yystack.l_mark[0].node); }
-#line 1838 "parse.c"
+#line 1851 "parse.c"
 break;
 case 44:
 #line 120 "parse.y"
 	{ yyval.node = mk(nSubshell,yystack.l_mark[0].node); }
-#line 1843 "parse.c"
+#line 1856 "parse.c"
 break;
 case 45:
 #line 121 "parse.y"
 	{ yyval.node = mk(nNewfn,yystack.l_mark[-1].node,yystack.l_mark[0].node); }
-#line 1848 "parse.c"
+#line 1861 "parse.c"
 break;
 case 46:
 #line 122 "parse.y"
 	{ yyval.node = mk(nRmfn,yystack.l_mark[0].node); }
-#line 1853 "parse.c"
+#line 1866 "parse.c"
 break;
 case 50:
 #line 128 "parse.y"
 	{ yyval.node = (yystack.l_mark[0].node != NULL ? mk(nArgs,yystack.l_mark[-1].node,yystack.l_mark[0].node) : yystack.l_mark[-1].node); }
-#line 1858 "parse.c"
+#line 1871 "parse.c"
 break;
 case 52:
 #line 131 "parse.y"
 	{ yyval.node = (yystack.l_mark[0].node != NULL ? mk(nArgs,yystack.l_mark[-1].node,yystack.l_mark[0].node) : yystack.l_mark[-1].node); }
-#line 1863 "parse.c"
+#line 1876 "parse.c"
 break;
 case 56:
 #line 137 "parse.y"
 	{ yyval.node = mk(nConcat,yystack.l_mark[-2].node,yystack.l_mark[0].node); }
-#line 1868 "parse.c"
+#line 1881 "parse.c"
 break;
 case 58:
 #line 140 "parse.y"
 	{ yyval.node = mk(nWord, yystack.l_mark[0].keyword, NULL, FALSE); }
-#line 1873 "parse.c"
+#line 1886 "parse.c"
 break;
 case 60:
 #line 143 "parse.y"
 	{ yyval.node = mk(nConcat,yystack.l_mark[-2].node,yystack.l_mark[0].node); }
-#line 1878 "parse.c"
+#line 1891 "parse.c"
 break;
 case 61:
 #line 145 "parse.y"
 	{ yyval.node = mk(nVar,yystack.l_mark[0].node); }
-#line 1883 "parse.c"
+#line 1896 "parse.c"
 break;
 case 62:
 #line 146 "parse.y"
 	{ yyval.node = mk(nVarsub,yystack.l_mark[-3].node,yystack.l_mark[-1].node); }
-#line 1888 "parse.c"
+#line 1901 "parse.c"
 break;
 case 63:
 #line 147 "parse.y"
 	{ yyval.node = mk(nCount,yystack.l_mark[0].node); }
-#line 1893 "parse.c"
+#line 1906 "parse.c"
 break;
 case 64:
 #line 148 "parse.y"
 	{ yyval.node = mk(nFlat, yystack.l_mark[0].node); }
-#line 1898 "parse.c"
+#line 1911 "parse.c"
 break;
 case 65:
 #line 149 "parse.y"
 	{ yyval.node = mk(nBackq,nolist,yystack.l_mark[0].node); }
-#line 1903 "parse.c"
+#line 1916 "parse.c"
 break;
 case 66:
 #line 150 "parse.y"
 	{ yyval.node = mk(nBackq,nolist,yystack.l_mark[0].node); }
-#line 1908 "parse.c"
+#line 1921 "parse.c"
 break;
 case 67:
 #line 151 "parse.y"
 	{ yyval.node = mk(nBackq,nolist,yystack.l_mark[0].node); }
-#line 1913 "parse.c"
+#line 1926 "parse.c"
 break;
 case 68:
 #line 152 "parse.y"
 	{ yyval.node = mk(nBackq,yystack.l_mark[-1].node,yystack.l_mark[0].node); }
-#line 1918 "parse.c"
+#line 1931 "parse.c"
 break;
 case 69:
 #line 153 "parse.y"
 	{ yyval.node = mk(nBackq,yystack.l_mark[-1].node,yystack.l_mark[0].node); }
-#line 1923 "parse.c"
+#line 1936 "parse.c"
 break;
 case 70:
 #line 154 "parse.y"
 	{ yyval.node = yystack.l_mark[-1].node; }
-#line 1928 "parse.c"
+#line 1941 "parse.c"
 break;
 case 71:
 #line 155 "parse.y"
 	{ yyval.node = mk(nNmpipe,yystack.l_mark[-1].redir.type,yystack.l_mark[-1].redir.fd,yystack.l_mark[0].node); }
-#line 1933 "parse.c"
+#line 1946 "parse.c"
 break;
 case 72:
 #line 156 "parse.y"
 	{ yyval.node = mk(nWord, yystack.l_mark[0].word.w, yystack.l_mark[0].word.m, yystack.l_mark[0].word.q); }
-#line 1938 "parse.c"
+#line 1951 "parse.c"
 break;
 case 73:
 #line 158 "parse.y"
 	{ yyval.keyword = "for"; }
-#line 1943 "parse.c"
+#line 1956 "parse.c"
 break;
 case 74:
 #line 159 "parse.y"
 	{ yyval.keyword = "in"; }
-#line 1948 "parse.c"
+#line 1961 "parse.c"
 break;
 case 75:
 #line 160 "parse.y"
 	{ yyval.keyword = "while"; }
-#line 1953 "parse.c"
+#line 1966 "parse.c"
 break;
 case 76:
 #line 161 "parse.y"
 	{ yyval.keyword = "if"; }
-#line 1958 "parse.c"
+#line 1971 "parse.c"
 break;
 case 77:
 #line 162 "parse.y"
 	{ yyval.keyword = "switch"; }
-#line 1963 "parse.c"
+#line 1976 "parse.c"
 break;
 case 78:
 #line 163 "parse.y"
 	{ yyval.keyword = "fn"; }
-#line 1968 "parse.c"
+#line 1981 "parse.c"
 break;
 case 79:
 #line 164 "parse.y"
 	{ yyval.keyword = "else"; }
-#line 1973 "parse.c"
+#line 1986 "parse.c"
 break;
 case 80:
 #line 165 "parse.y"
 	{ yyval.keyword = "case"; }
-#line 1978 "parse.c"
+#line 1991 "parse.c"
 break;
 case 81:
 #line 166 "parse.y"
 	{ yyval.keyword = "~"; }
-#line 1983 "parse.c"
+#line 1996 "parse.c"
 break;
 case 82:
 #line 167 "parse.y"
 	{ yyval.keyword = "!"; }
-#line 1988 "parse.c"
+#line 2001 "parse.c"
 break;
 case 83:
 #line 168 "parse.y"
 	{ yyval.keyword = "@"; }
-#line 1993 "parse.c"
+#line 2006 "parse.c"
 break;
 case 84:
 #line 169 "parse.y"
 	{ yyval.keyword = "="; }
-#line 1998 "parse.c"
+#line 2011 "parse.c"
 break;
 case 85:
 #line 171 "parse.y"
 	{ yyval.node = NULL; }
-#line 2003 "parse.c"
+#line 2016 "parse.c"
 break;
 case 86:
 #line 172 "parse.y"
 	{ yyval.node = (yystack.l_mark[-1].node != NULL ? (yystack.l_mark[0].node != NULL ? mk(nLappend,yystack.l_mark[-1].node,yystack.l_mark[0].node) : yystack.l_mark[-1].node) : yystack.l_mark[0].node); }
-#line 2008 "parse.c"
+#line 2021 "parse.c"
 break;
 case 87:
 #line 174 "parse.y"
 	{ yyval.node = NULL; }
-#line 2013 "parse.c"
+#line 2026 "parse.c"
 break;
 case 89:
 #line 176 "parse.y"
 	{ yyval.node = (yystack.l_mark[-1].node != NULL ? (yystack.l_mark[0].node != NULL ? mk(nLappend,yystack.l_mark[-1].node,yystack.l_mark[0].node) : yystack.l_mark[-1].node) : yystack.l_mark[0].node); }
-#line 2018 "parse.c"
+#line 2031 "parse.c"
 break;
-#line 2020 "parse.c"
+#line 2033 "parse.c"
     default:
         break;
     }

@@ -1,4 +1,8 @@
 /* match.c: pattern matching routines */
+/*
+ * Glob matching in linear time, as described by Russ Cox:
+ * https://research.swtch.com/glob
+ */
 
 #include "rc.h"
 
@@ -27,10 +31,12 @@ extern bool match(const char *p, const char *m, const char *s) {
 				}
 				break;
 			case '[': {
-				int r = 1 + rangematch(p+1, *s);
-				if (r > 0) {
-					p += r, m += r, s++;
-					continue;
+				if (*s != '\0') {
+					int r = 1 + rangematch(p+1, *s);
+					if (r > 0) {
+						p += r, m += r, s++;
+						continue;
+					}
 				}
 				break;
 			}
