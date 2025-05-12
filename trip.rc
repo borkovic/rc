@@ -1043,16 +1043,19 @@ submatch 'flag x +; flag x -' 'flag x -' 'setting x flag'
 
 d=$pwd
 cd $tmpdir
+
 touch .j .k
 x = (.[~.])
-if (! ~ $#x 2) {
-	fail 'Pattern ".[~.]" should match 2 values (.j, .k)': $x
-}
-if (! ~ $^x '.j .k' '.k .j') {
-	fail 'Pattern ".[~.]" should match values (.j, .k)': '<'$^x'>'
-}
-
+~ $#x 2 || fail 'Pattern ".[~.]" should match 2 values (.j, .k)': $x, $#x
+~ $^x '.j .k' '.k .j' || fail 'Pattern ".[~.]" should match values (.j, .k)': '<'$^x'>'
 rm -f .j .k
+
+touch x xx xa xb xc
+x = (x[~x])
+~ $#x 3 || fail 'Pattern "x[~x]" should match 3 values(xa xb xc)': $x, $#x
+~ $^x 'xa xb xc' 'xa xc xb' 'xb xa xc' 'xb xc xa' 'xc xa xb' 'xc xb xa' || fail 'Pattern "x[~x]" should match values(xa xb xc)': '<'$^x'>'
+rm -f x xx xa xb xc
+
 x=()
 cd $d
 
