@@ -30,8 +30,8 @@ extern bool match(const char *p, const char *m, const char *s) {
 					continue;
 				}
 				break;
-			case '[': {
-				if (*s != '\0') {
+			case '[':
+				if (*s) {
 					int r = 1 + rangematch(p+1, *s);
 					if (r > 0) {
 						p += r, m += r, s++;
@@ -39,7 +39,6 @@ extern bool match(const char *p, const char *m, const char *s) {
 					}
 				}
 				break;
-			}
 			case '*':
 				next.p = p++;
 				next.m = m++;
@@ -48,7 +47,6 @@ extern bool match(const char *p, const char *m, const char *s) {
 			default:
 				panic("bad metacharacter in match");
 				/* NOTREACHED */
-				return FALSE; /* hush up gcc -Wall */
 			}
 		}
 		if (next.s != NULL) {
