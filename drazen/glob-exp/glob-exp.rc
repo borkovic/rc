@@ -32,35 +32,32 @@ while (! ~ $#* 0) {
 
 ###########################################################################
 ~ $#* 1        || Usage
-calc N=$1      || Usage
-calc $N '<=' 0 && Usage
+PatLen=$1
 
 ###########################################################################
+StrLen=100
+
 str=''
-i=0
-while (calc $i '<' 100) {
+for (x in `{seq $StrLen}) {
     str=$str^a
-    calc i=$i+1
 }
 
 ###########################################################################
 pat=''
 
-i=0
-while (calc $i '<' $N) {
+for (x in `{seq $PatLen}) {
     pat=$pat^'a*'
-    calc i=$i+1
 }
 pat=$pat^'b'
 ###########################################################################
 
 Shell=rc
-echo 'shell='$Shell', N='$N; echo
+echo 'shell='$Shell', PatLen='$PatLen', StrLen='$StrLen; echo
 
 fn EvalCmd { cmd=$* a=false{
     if ($ECHO_CMD) {
         cmd=$^cmd
-        #whatis cmd
+        whatis cmd
         echo -n 'Result: '
     }
     eval $cmd
