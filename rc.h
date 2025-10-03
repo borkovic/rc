@@ -56,6 +56,10 @@ typedef enum Bool {
 } Bool;
 #define new New
 #else
+#if __STDC_VERSION__ >= 202311L
+#define FALSE false
+#define TRUE true
+#else
 typedef enum bool {
 	FALSE, TRUE
 } bool;
