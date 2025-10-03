@@ -55,7 +55,9 @@ typedef enum Bool {
 	FALSE, TRUE
 } Bool;
 #define new New
+
 #else
+
 #if __STDC_VERSION__ >= 202311L
 #define FALSE false
 #define TRUE true
@@ -63,6 +65,8 @@ typedef enum Bool {
 typedef enum bool {
 	FALSE, TRUE
 } bool;
+#endif
+
 #endif
 
 typedef enum redirtype {
