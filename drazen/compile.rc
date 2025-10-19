@@ -222,6 +222,7 @@ if (~ $OPT 0) {
 }
 
 # c89/c90, c99, c11, and c18 [c23]
+# gnu2x
 CN=23
 LangOpts = (
 	-m32
