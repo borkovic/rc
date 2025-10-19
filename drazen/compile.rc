@@ -223,7 +223,20 @@ if (~ $OPT 0) {
 
 # c89/c90, c99, c11, and c18 [c23]
 # gnu2x
-CN=23
+TMP=tmp-$pid.c
+cat > $TMP << EOF
+int main() {
+	return 0;
+}
+EOF
+
+if (gcc -c -std=c23 $TMP) {
+	CN=23
+} else {
+	CN=2x
+}
+rm -f $TMP
+
 LangOpts = (
 	-m32
 	'-std=c'^$CN
