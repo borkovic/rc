@@ -223,28 +223,41 @@ if (~ $OPT 0) {
 
 # c89/c90, c99, c11, and c18 [c23]
 # gnu2x
-TMP=tmp-$pid.c
-cat > $TMP << EOF
+n=$pid
+TMPc=tmp-$n.c
+TMPo=tmp-$n.o
+
+cat > $TMPc << EOF
 int main() {
 	return 0;
 }
 EOF
 
-if (gcc -c -std=c23 $TMP) {
-	CN=23
-} else {
-	CN=2x
-}
-rm -f $TMP
-
-LangOpts = (
-	-m32
-	'-std=c'^$CN
+cStandards = (
+	gnu23
+	c23
+	gnu2x
+	c2x
+	c17
 )
+cStd=()
+for (s in $cStandards) {
+	if (gcc -c -std=$s $TMPc) {
+		cStd=$s
+		break
+	}
+}
+rm -f $TMPc $TMPo
+
+if (~ $cStd ()) {
+	Fatal Cannot find C standard
+} else {
+	echo Using C standard: $cStd
+}
 
 LangOpts = (
 	#-m32
-	'-std=gnu'^$CN
+	'-std='^$cStd
 	#-m64
 )
 
