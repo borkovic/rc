@@ -1,7 +1,9 @@
 #ifndef CALC_DECL_H_INCLUDE
 #define CALC_DECL_H_INCLUDE
 
-typedef long int CalcValue;
+#include <stdint.h>
+
+typedef int64_t CalcValue;
 #include "calc.h"
 
 typedef calctoken CalcToken;
