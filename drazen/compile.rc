@@ -367,7 +367,12 @@ if (~ $v ()) {
 	echo '#ifndef VERSION'
 	echo '#define VERSION "'$v'"'
 	echo '#endif'
-} > version.h
+} > version-tmp.h
+if (test -r version.h && cmp -s version-tmp.h version.h) {
+	rm -f version-tmp.h
+} else {
+	mv -f version-tmp.h version.h
+}
 
 LinkOpts = (
 	$CommonOpts
@@ -540,7 +545,8 @@ fn Compile LinkOneObj { file = $1 obj = () all_headers = () {
 
 ########################################################################################
 ########################################################################################
-echo Compiler: $COMPILER, Compile options: $CompileOpts
+echo Compiler: $COMPILER
+echo Compile options: $CompileOpts
 echo Link options: $LinkOpts
 
 
@@ -627,13 +633,14 @@ if (~ $objDir ()) {
 }
 
 ########################################################################################
-if (whatis byacc >[2] /dev/null) {
+if (whatis byacc > /dev/null >[2=1]) {
 	YaccExe = byacc
 	calc_opts = (-P)
 } else {
 	calc_opts = ()
 	YaccExe = bison
 }
+echo Yacc: $YaccExe
 yaccOpts = (-t -v -d)
 
 ########################################################################################
