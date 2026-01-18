@@ -163,7 +163,7 @@ void b_calc(char **av) {
 			rc_status = BAD_EXP;
 		} else {
 			CalcLexData lexData;
-            CalcValue parse_value = 0;
+			CalcValue parse_value = 0;
 			int parse_status;
 
 			lexData.m_CalcCmdName = calcCmdName;

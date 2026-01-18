@@ -6,5 +6,5 @@ val_opts=(
   '--gen-suppressions=yes'
 )
 
-valgrind $val_opts ./rc -p < trip.rc  >[2]val.err | tee val.out 
+valgrind $val_opts ./rc -p < trip.rc  >[2]val.err | tee val.out
 
