@@ -2092,7 +2092,7 @@ Here is
 grammar, edited to remove semantic actions.
 .Ds
 .ft \*(Cf
-%term ANDAND BACKBACK BANG CASE COUNT DUP ELSE END FLAT FN FOR IF IN
+%token ANDAND BACKBACK BANG CASE COUNT DUP ELSE END FLAT FN FOR IF IN
 %token OROR PIPE REDIR SREDIR SUB SUBSHELL SWITCH TWIDDLE WHILE WORD HUH
 
 %left     '^' '='
@@ -2128,7 +2128,7 @@ paren: '(' body ')'
 
 assign: first optcaret '=' optcaret word
 
-epilog: /* empty */ | epilog redir
+epilog: /* empty */ | redir epilog
 
 redir : DUP | REDIR word | SREDIR word
 
@@ -2144,7 +2144,7 @@ cmd	: /* empty */	%prec WHILE
 	| simple
 	| brace epilog
 	| IF paren optnl iftail
-	| FOR '(' word IN words ')' optnl cmd
+	| FOR '(' word IN nlwords ')' optnl cmd
 	| FOR '(' word ')' optnl cmd
 	| WHILE paren optnl cmd	
 	| SWITCH '(' word ')' optnl '{' cbody '}'
@@ -2174,13 +2174,14 @@ sword: comword | keyword
 word: sword | word '^' sword
 
 comword: '$' sword
-	| '$' sword SUB words ')'
+	| '$' sword SUB nlwords ')'
 	| COUNT sword
 	| FLAT sword
 	| '`' sword
 	| '`' brace
 	| '$' brace
-	| BACKBACK word	brace | BACKBACK word sword
+	| BACKBACK word	brace
+	| BACKBACK word sword
 	| '(' nlwords ')'
 	| REDIR brace
 	| WORD
