@@ -84,7 +84,9 @@ main.o: version.h
 version.h: Makefile .git/index
 	@echo "GEN $@"
 	v="$$(cd $(srcdir) && git describe --always 2>/dev/null || true)"; \
-	echo "#define VERSION \"$${v:-$(VERSION)}\"" >$@
+	echo "#ifndef VERSION" >$@
+	echo "#define VERSION \"$${v:-$(VERSION)}\"" >>$@
+	echo "#endif" >>$@
 
 .git/index:
 
