@@ -51,7 +51,7 @@ config.h:
 
 lex.o parse.o: parse.c
 
-YACC=byacc
+YACC=bison -y -d
 
 parse.c: parse.y
 	@echo "GEN $@": $(YACC) calc -b $* -d $<
