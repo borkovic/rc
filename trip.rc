@@ -5,12 +5,21 @@ rc=$0
 echo tripping $rc $version
 
 tmpdir=''
+echo Define fn fail
 fn fail {
 	echo >[1=2] trip took a wrong turn: $*
 	rm -rf $tmpdir
 	fn sigexit
 	exit 1
 }
+
+e='175 == 175'
+echo Testing '!' calc $e
+if (! calc $e) {
+	fail calc test: '`'calc $e'`' should succeed
+}
+echo Finish testing '!' calc 0
+
 fn expect {
 	echo >[1=2] -n expect $^*^': '
 }
@@ -76,8 +85,9 @@ if (calc 0) {
 	fail calc test: '`calc 0`' should fail
 }
 
-echo Testing calc n for several non-zero values of n
-for (n in 1 5 -3 11 -13) {
+nz = (1 5 -3 11 -13)
+echo Testing calc n for several non-zero values of n: $nz
+for (n in $nz) {
 	if (! calc $n) {
 		fail calc test: '`calc '^$n'`' should succeed
 	}

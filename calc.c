@@ -556,8 +556,8 @@ static const yytype_int8 yytranslate[] =
 static const yytype_uint8 yyrline[] =
 {
        0,    73,    73,    77,    84,    90,    91,    92,    93,    94,
-      95,   109,   110,   111,   112,   113,   114,   118,   122,   123,
-     124,   125,   133,   141,   142,   143,   144,   145,   153,   154
+      95,   111,   112,   113,   114,   115,   116,   120,   124,   125,
+     126,   127,   135,   143,   144,   145,   146,   147,   155,   156
 };
 #endif
 
@@ -1241,84 +1241,86 @@ yyreduce:
 			eqeq = fopen("eqeq.txt", "w");
 		}
 		fprintf(eqeq, "(Y-Comparing %lld == %lld)\n", (long long)(yyvsp[-2].m_Val), (long long)(yyvsp[0].m_Val));
+		fflush(eqeq);
 		printf("(Z-Comparing %lld == %lld)\n", (long long)(yyvsp[-2].m_Val), (long long)(yyvsp[0].m_Val));
-		fflush(eqeq);
 		fflush(stdout);
+
 		(yyval.m_Val) = ((yyvsp[-2].m_Val) == (yyvsp[0].m_Val));
+
 		fprintf(eqeq, "(Y-Result of comparison %lld == %lld: %lld)\n", (long long)(yyvsp[-2].m_Val), (long long)(yyvsp[0].m_Val), (long long)(yyval.m_Val));
-		printf("(Z-Result of comparison %lld == %lld: %lld)\n", (long long)(yyvsp[-2].m_Val), (long long)(yyvsp[0].m_Val), (long long)(yyval.m_Val));
 		fflush(eqeq);
+		printf("(Z-Result of comparison %lld == %lld: %lld)\n", (long long)(yyvsp[-2].m_Val), (long long)(yyvsp[0].m_Val), (long long)(yyval.m_Val));
 		fflush(stdout);
 	}
-#line 1254 "calc.tab.c"
+#line 1256 "calc.tab.c"
     break;
 
   case 11: /* expr: expr CALC_NEQ expr  */
-#line 109 "calc.y"
+#line 111 "calc.y"
                               { (yyval.m_Val) = ((yyvsp[-2].m_Val) != (yyvsp[0].m_Val)); }
-#line 1260 "calc.tab.c"
+#line 1262 "calc.tab.c"
     break;
 
   case 12: /* expr: expr '>' expr  */
-#line 110 "calc.y"
+#line 112 "calc.y"
                         { (yyval.m_Val) = (yyvsp[-2].m_Val) > (yyvsp[0].m_Val); }
-#line 1266 "calc.tab.c"
+#line 1268 "calc.tab.c"
     break;
 
   case 13: /* expr: expr '<' expr  */
-#line 111 "calc.y"
+#line 113 "calc.y"
                         { (yyval.m_Val) = (yyvsp[-2].m_Val) < (yyvsp[0].m_Val); }
-#line 1272 "calc.tab.c"
+#line 1274 "calc.tab.c"
     break;
 
   case 14: /* expr: expr CALC_LEQ expr  */
-#line 112 "calc.y"
+#line 114 "calc.y"
                              { (yyval.m_Val) = (yyvsp[-2].m_Val) <= (yyvsp[0].m_Val); }
-#line 1278 "calc.tab.c"
+#line 1280 "calc.tab.c"
     break;
 
   case 15: /* expr: expr CALC_GEQ expr  */
-#line 113 "calc.y"
+#line 115 "calc.y"
                              { (yyval.m_Val) = (yyvsp[-2].m_Val) >= (yyvsp[0].m_Val); }
-#line 1284 "calc.tab.c"
+#line 1286 "calc.tab.c"
     break;
 
   case 16: /* expr: expr CALC_LSHIFT expr  */
-#line 115 "calc.y"
+#line 117 "calc.y"
                 {	const CalcValue v3 = (yyvsp[0].m_Val);
 			(yyval.m_Val) = (v3 >= 0) ? ((yyvsp[-2].m_Val) << v3) : ((yyvsp[-2].m_Val) >> (-v3));
 		}
-#line 1292 "calc.tab.c"
+#line 1294 "calc.tab.c"
     break;
 
   case 17: /* expr: expr CALC_RSHIFT expr  */
-#line 119 "calc.y"
+#line 121 "calc.y"
                 {	const CalcValue v3 = (yyvsp[0].m_Val);
 			(yyval.m_Val) = (v3>=0) ? ((yyvsp[-2].m_Val) >> v3) : ((yyvsp[-2].m_Val) << (-v3));
 		}
-#line 1300 "calc.tab.c"
+#line 1302 "calc.tab.c"
     break;
 
   case 18: /* expr: expr '+' expr  */
-#line 122 "calc.y"
+#line 124 "calc.y"
                         { (yyval.m_Val) = (yyvsp[-2].m_Val) + (yyvsp[0].m_Val); }
-#line 1306 "calc.tab.c"
+#line 1308 "calc.tab.c"
     break;
 
   case 19: /* expr: expr '-' expr  */
-#line 123 "calc.y"
+#line 125 "calc.y"
                         { (yyval.m_Val) = (yyvsp[-2].m_Val) - (yyvsp[0].m_Val); }
-#line 1312 "calc.tab.c"
+#line 1314 "calc.tab.c"
     break;
 
   case 20: /* expr: expr '*' expr  */
-#line 124 "calc.y"
+#line 126 "calc.y"
                            { (yyval.m_Val) = (yyvsp[-2].m_Val) * (yyvsp[0].m_Val); }
-#line 1318 "calc.tab.c"
+#line 1320 "calc.tab.c"
     break;
 
   case 21: /* expr: expr '/' expr  */
-#line 126 "calc.y"
+#line 128 "calc.y"
                 {	const CalcValue v3 = (yyvsp[0].m_Val);
 			if (v3 == 0) {
 				calcerror("Division by 0");
@@ -1326,11 +1328,11 @@ yyreduce:
 			}
 			(yyval.m_Val) = (yyvsp[-2].m_Val) / (v3);
 		}
-#line 1330 "calc.tab.c"
+#line 1332 "calc.tab.c"
     break;
 
   case 22: /* expr: expr '%' expr  */
-#line 134 "calc.y"
+#line 136 "calc.y"
                 {	const CalcValue v3 = (yyvsp[0].m_Val);
 			if (v3 == 0) {
 				calcerror("Module by 0");
@@ -1338,35 +1340,35 @@ yyreduce:
 			}
 			(yyval.m_Val) = (yyvsp[-2].m_Val) % (v3);
 		}
-#line 1342 "calc.tab.c"
+#line 1344 "calc.tab.c"
     break;
 
   case 23: /* expr: '!' expr  */
-#line 141 "calc.y"
+#line 143 "calc.y"
                     { (yyval.m_Val) = !(yyvsp[0].m_Val); }
-#line 1348 "calc.tab.c"
+#line 1350 "calc.tab.c"
     break;
 
   case 24: /* expr: '~' expr  */
-#line 142 "calc.y"
+#line 144 "calc.y"
                     { (yyval.m_Val) = ~(yyvsp[0].m_Val); }
-#line 1354 "calc.tab.c"
+#line 1356 "calc.tab.c"
     break;
 
   case 25: /* expr: '-' expr  */
-#line 143 "calc.y"
+#line 145 "calc.y"
                                               { (yyval.m_Val) = -(yyvsp[0].m_Val); }
-#line 1360 "calc.tab.c"
+#line 1362 "calc.tab.c"
     break;
 
   case 26: /* expr: '+' expr  */
-#line 144 "calc.y"
+#line 146 "calc.y"
                                               { (yyval.m_Val) = +(yyvsp[0].m_Val); }
-#line 1366 "calc.tab.c"
+#line 1368 "calc.tab.c"
     break;
 
   case 27: /* expr: expr '@' expr  */
-#line 146 "calc.y"
+#line 148 "calc.y"
                 {	const CalcValue v3 = (yyvsp[0].m_Val);
 			if (v3 < 0) {
 				calcerror("Negative power");
@@ -1374,23 +1376,23 @@ yyreduce:
 			}
 			(yyval.m_Val) = CalcPower((yyvsp[-2].m_Val), v3);
 		}
-#line 1378 "calc.tab.c"
+#line 1380 "calc.tab.c"
     break;
 
   case 28: /* expr: '(' expr ')'  */
-#line 153 "calc.y"
+#line 155 "calc.y"
                           { (yyval.m_Val) = (yyvsp[-1].m_Val); }
-#line 1384 "calc.tab.c"
+#line 1386 "calc.tab.c"
     break;
 
   case 29: /* expr: CALC_NUMBER  */
-#line 154 "calc.y"
+#line 156 "calc.y"
                        { (yyval.m_Val) = (yyvsp[0].m_Val); }
-#line 1390 "calc.tab.c"
+#line 1392 "calc.tab.c"
     break;
 
 
-#line 1394 "calc.tab.c"
+#line 1396 "calc.tab.c"
 
       default: break;
     }
@@ -1583,7 +1585,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 157 "calc.y"
+#line 159 "calc.y"
 
 
 /*
