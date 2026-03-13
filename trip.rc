@@ -71,14 +71,33 @@ submatch 'echo $x(1:5)' 'rc: bad subscript' 'bad subscript 12'
 ######################################################################
 ## Testing builtin calc.
 ######################################################################
+echo Testing calc 0
 if (calc 0) {
 	fail calc test: '`calc 0`' should fail
 }
 
+echo Testing calc n for several non-zero values of n
 for (n in 1 5 -3 11 -13) {
 	if (! calc $n) {
 		fail calc test: '`calc '^$n'`' should succeed
 	}
+}
+
+echo Testing 'calc 0 == 1'
+if (calc '0 == 1') {
+	fail calc test: '`calc 0 == 1`' should fail
+}
+echo Testing 'calc 0 != 0'
+if (calc '0 != 0') {
+	fail calc test: '`calc 0 != 0`' should fail
+}
+echo Testing '! calc 0 == 0'
+if (! calc '0 == 0') {
+	fail calc test: '`calc 0 == 0`' should succeed
+}
+echo Testing '! calc 0 == 1'
+if (! calc '0 != 1') {
+	fail calc test: '`calc 0 != 1`' should succeed
 }
 
 fn testOneCalc { v=() e=() a=() x=() {
@@ -127,6 +146,13 @@ fn calcExprErr { exp=$1 msg=$2 s=() n=() {
 ######################################################################
 fn testManyCalcs { numEntries=() exp=() val=() {
   *=(
+	'17 == 17'                      1
+	'17 == 18'					    0
+	'0 == 0'                        1
+	'0 == 1'                        0
+	'1 == 1'                        1
+	'1 == 0'						0
+
     '4 || 3'                        1
     '5 || 0'                        1
     '0 || 18'                       1
@@ -219,6 +245,8 @@ fn testManyCalcs { numEntries=() exp=() val=() {
     fail calc test 2 has odd number of entries: $numEntries, should be even.
   }
 
+  echo Done checking numEntries is even
+
   while () {
     if (~ $#* 0) {
       break
@@ -257,6 +285,10 @@ fn testManyCalcs { numEntries=() exp=() val=() {
   calcExprErr  '*2'          'invalid expr syntax'
 
 }}
+echo TestingA 'calc 0 == 1'
+if (calc '0 == 1') {
+	fail calc test: '`calc 0 == 1`' should fail
+}
 testManyCalcs
 
 
@@ -340,8 +372,8 @@ $abc heredoc$x
 $abc^n $x^here$x^doc
 EOF
 {if (!~ `` $nl cat '	') fail quoted heredoc} << ' '
-	
- 
+
+
 
 <<<[9] ``''{cat $bigfile} \
 {

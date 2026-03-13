@@ -551,8 +551,8 @@ static const yytype_int8 yytranslate[] =
 static const yytype_uint8 yyrline[] =
 {
        0,    68,    68,    72,    79,    85,    86,    87,    88,    89,
-      90,    91,    92,    93,    94,    95,    96,   100,   104,   105,
-     106,   107,   115,   123,   124,   125,   126,   127,   135,   136
+      90,    95,    96,    97,    98,    99,   100,   104,   108,   109,
+     110,   111,   119,   127,   128,   129,   130,   131,   139,   140
 };
 #endif
 
@@ -1231,76 +1231,80 @@ yyreduce:
 
   case 10: /* expr: expr CALC_EQEQ expr  */
 #line 90 "calc.y"
-                              { (yyval.m_Val) = ((yyvsp[-2].m_Val) == (yyvsp[0].m_Val)); }
-#line 1236 "calc.tab.c"
+                              {
+		printf("Y-Comparing %lld == %lld\n", (long long)(yyvsp[-2].m_Val), (long long)(yyvsp[0].m_Val));
+		(yyval.m_Val) = ((yyvsp[-2].m_Val) == (yyvsp[0].m_Val));
+		printf("Y-Result of comparison %lld == %lld: %lld\n", (long long)(yyvsp[-2].m_Val), (long long)(yyvsp[0].m_Val), (long long)(yyval.m_Val));
+	}
+#line 1240 "calc.tab.c"
     break;
 
   case 11: /* expr: expr CALC_NEQ expr  */
-#line 91 "calc.y"
+#line 95 "calc.y"
                               { (yyval.m_Val) = ((yyvsp[-2].m_Val) != (yyvsp[0].m_Val)); }
-#line 1242 "calc.tab.c"
+#line 1246 "calc.tab.c"
     break;
 
   case 12: /* expr: expr '>' expr  */
-#line 92 "calc.y"
+#line 96 "calc.y"
                         { (yyval.m_Val) = (yyvsp[-2].m_Val) > (yyvsp[0].m_Val); }
-#line 1248 "calc.tab.c"
+#line 1252 "calc.tab.c"
     break;
 
   case 13: /* expr: expr '<' expr  */
-#line 93 "calc.y"
+#line 97 "calc.y"
                         { (yyval.m_Val) = (yyvsp[-2].m_Val) < (yyvsp[0].m_Val); }
-#line 1254 "calc.tab.c"
+#line 1258 "calc.tab.c"
     break;
 
   case 14: /* expr: expr CALC_LEQ expr  */
-#line 94 "calc.y"
+#line 98 "calc.y"
                              { (yyval.m_Val) = (yyvsp[-2].m_Val) <= (yyvsp[0].m_Val); }
-#line 1260 "calc.tab.c"
+#line 1264 "calc.tab.c"
     break;
 
   case 15: /* expr: expr CALC_GEQ expr  */
-#line 95 "calc.y"
+#line 99 "calc.y"
                              { (yyval.m_Val) = (yyvsp[-2].m_Val) >= (yyvsp[0].m_Val); }
-#line 1266 "calc.tab.c"
+#line 1270 "calc.tab.c"
     break;
 
   case 16: /* expr: expr CALC_LSHIFT expr  */
-#line 97 "calc.y"
+#line 101 "calc.y"
                 {	const CalcValue v3 = (yyvsp[0].m_Val);
 			(yyval.m_Val) = (v3 >= 0) ? ((yyvsp[-2].m_Val) << v3) : ((yyvsp[-2].m_Val) >> (-v3));
 		}
-#line 1274 "calc.tab.c"
+#line 1278 "calc.tab.c"
     break;
 
   case 17: /* expr: expr CALC_RSHIFT expr  */
-#line 101 "calc.y"
+#line 105 "calc.y"
                 {	const CalcValue v3 = (yyvsp[0].m_Val);
 			(yyval.m_Val) = (v3>=0) ? ((yyvsp[-2].m_Val) >> v3) : ((yyvsp[-2].m_Val) << (-v3));
 		}
-#line 1282 "calc.tab.c"
+#line 1286 "calc.tab.c"
     break;
 
   case 18: /* expr: expr '+' expr  */
-#line 104 "calc.y"
+#line 108 "calc.y"
                         { (yyval.m_Val) = (yyvsp[-2].m_Val) + (yyvsp[0].m_Val); }
-#line 1288 "calc.tab.c"
+#line 1292 "calc.tab.c"
     break;
 
   case 19: /* expr: expr '-' expr  */
-#line 105 "calc.y"
+#line 109 "calc.y"
                         { (yyval.m_Val) = (yyvsp[-2].m_Val) - (yyvsp[0].m_Val); }
-#line 1294 "calc.tab.c"
+#line 1298 "calc.tab.c"
     break;
 
   case 20: /* expr: expr '*' expr  */
-#line 106 "calc.y"
+#line 110 "calc.y"
                            { (yyval.m_Val) = (yyvsp[-2].m_Val) * (yyvsp[0].m_Val); }
-#line 1300 "calc.tab.c"
+#line 1304 "calc.tab.c"
     break;
 
   case 21: /* expr: expr '/' expr  */
-#line 108 "calc.y"
+#line 112 "calc.y"
                 {	const CalcValue v3 = (yyvsp[0].m_Val);
 			if (v3 == 0) {
 				calcerror("Division by 0");
@@ -1308,11 +1312,11 @@ yyreduce:
 			}
 			(yyval.m_Val) = (yyvsp[-2].m_Val) / (v3);
 		}
-#line 1312 "calc.tab.c"
+#line 1316 "calc.tab.c"
     break;
 
   case 22: /* expr: expr '%' expr  */
-#line 116 "calc.y"
+#line 120 "calc.y"
                 {	const CalcValue v3 = (yyvsp[0].m_Val);
 			if (v3 == 0) {
 				calcerror("Module by 0");
@@ -1320,35 +1324,35 @@ yyreduce:
 			}
 			(yyval.m_Val) = (yyvsp[-2].m_Val) % (v3);
 		}
-#line 1324 "calc.tab.c"
+#line 1328 "calc.tab.c"
     break;
 
   case 23: /* expr: '!' expr  */
-#line 123 "calc.y"
+#line 127 "calc.y"
                     { (yyval.m_Val) = !(yyvsp[0].m_Val); }
-#line 1330 "calc.tab.c"
+#line 1334 "calc.tab.c"
     break;
 
   case 24: /* expr: '~' expr  */
-#line 124 "calc.y"
+#line 128 "calc.y"
                     { (yyval.m_Val) = ~(yyvsp[0].m_Val); }
-#line 1336 "calc.tab.c"
+#line 1340 "calc.tab.c"
     break;
 
   case 25: /* expr: '-' expr  */
-#line 125 "calc.y"
+#line 129 "calc.y"
                                               { (yyval.m_Val) = -(yyvsp[0].m_Val); }
-#line 1342 "calc.tab.c"
+#line 1346 "calc.tab.c"
     break;
 
   case 26: /* expr: '+' expr  */
-#line 126 "calc.y"
+#line 130 "calc.y"
                                               { (yyval.m_Val) = +(yyvsp[0].m_Val); }
-#line 1348 "calc.tab.c"
+#line 1352 "calc.tab.c"
     break;
 
   case 27: /* expr: expr '@' expr  */
-#line 128 "calc.y"
+#line 132 "calc.y"
                 {	const CalcValue v3 = (yyvsp[0].m_Val);
 			if (v3 < 0) {
 				calcerror("Negative power");
@@ -1356,23 +1360,23 @@ yyreduce:
 			}
 			(yyval.m_Val) = CalcPower((yyvsp[-2].m_Val), v3);
 		}
-#line 1360 "calc.tab.c"
+#line 1364 "calc.tab.c"
     break;
 
   case 28: /* expr: '(' expr ')'  */
-#line 135 "calc.y"
+#line 139 "calc.y"
                           { (yyval.m_Val) = (yyvsp[-1].m_Val); }
-#line 1366 "calc.tab.c"
+#line 1370 "calc.tab.c"
     break;
 
   case 29: /* expr: CALC_NUMBER  */
-#line 136 "calc.y"
+#line 140 "calc.y"
                        { (yyval.m_Val) = (yyvsp[0].m_Val); }
-#line 1372 "calc.tab.c"
+#line 1376 "calc.tab.c"
     break;
 
 
-#line 1376 "calc.tab.c"
+#line 1380 "calc.tab.c"
 
       default: break;
     }
@@ -1565,7 +1569,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 139 "calc.y"
+#line 143 "calc.y"
 
 
 /*

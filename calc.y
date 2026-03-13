@@ -87,7 +87,11 @@ expr: expr CALC_OROR expr    { $$ = $1 || $3; }
 	| expr '|' expr { $$ = $1 | $3; } ;
 	| expr '^' expr { $$ = $1 ^ $3; } ;
 	| expr '&' expr { $$ = $1 & $3; } ;
-	| expr CALC_EQEQ expr { $$ = ($1 == $3); }
+	| expr CALC_EQEQ expr {
+		printf("Y-Comparing %lld == %lld\n", (long long)$1, (long long)$3);
+		$$ = ($1 == $3);
+		printf("Y-Result of comparison %lld == %lld: %lld\n", (long long)$1, (long long)$3, (long long)$$);
+	}
 	| expr CALC_NEQ expr  { $$ = ($1 != $3); }
 	| expr '>' expr { $$ = $1 > $3; }
 	| expr '<' expr { $$ = $1 < $3; }
