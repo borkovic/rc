@@ -49,17 +49,19 @@ config.h:
 	@echo "GEN $@"
 	cp "$(srcdir)/config.def.h" $@
 
-lex.o parse.o: parse.c
+lex.o parse.o: parse.c parse.tab.h
+
+calc.o: calc.c calc.tab.h
 
 YACC=bison -d
 
-parse.c parse.h: parse.y
+parse.c parse.tab.h: parse.y
 	@echo "GEN $@": $(YACC) calc -b $* -d $<
 	$(YACC) -b $* -d $<
 	mv $*.tab.c $*.c
 	# mv $*.tab.h $*.h
 
-calc.c calc.h: calc.y
+calc.c calc.tab.h: calc.y
 	@echo "GEN $@": $(YACC) -p calc -b $* -d $<
 	$(YACC) -p calc -b $* -d $<
 	mv $*.tab.c $*.c
