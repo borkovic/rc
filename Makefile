@@ -58,14 +58,14 @@ YACC=bison -d
 parse.c parse.tab.h: parse.y
 	@echo "GEN $@": $(YACC) calc -b $* -d $<
 	$(YACC) -b $* -d $<
-	mv $*.tab.c $*.c
-	# mv $*.tab.h $*.h
+	mv parse.tab.c parse.c
+	# mv parse.tab.h parse.h
 
 calc.c calc.tab.h: calc.y
 	@echo "GEN $@": $(YACC) -p calc -b $* -d $<
 	$(YACC) -p calc -b $* -d $<
-	mv $*.tab.c $*.c
-	# mv $*.tab.h $*.h
+	mv calc.tab.c calc.c
+	# mv calc.tab.h calc.h
 
 addon.o builtins.o fn.o hash.o sigmsgs.o signal.o status.o: sigmsgs.c
 
