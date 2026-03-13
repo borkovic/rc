@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 typedef int64_t CalcValue;
-#include "calc.h"
+#include "calc.tab.h"
 
 // typedef calctoken CalcToken;
 typedef int CalcToken;
