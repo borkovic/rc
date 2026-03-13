@@ -148,7 +148,7 @@ extern void ssetstatus(char **av) {
 		; /* count up array length */
 	--l;
 	for (i = 0; av[i] != NULL; i++) {
-        j = a2u(av[i]);
+		j = a2u(av[i]);
 		if (j >= 0) {
 			statuses[l - i] = j << 8;
 			if (j > 0) {

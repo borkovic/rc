@@ -51,7 +51,7 @@ config.h:
 
 lex.o parse.o: parse.c
 
-YACC=byacc
+YACC=bison -y -d
 
 parse.c: parse.y
 	@echo "GEN $@": $(YACC) calc -b $* -d $<
@@ -84,7 +84,9 @@ main.o: version.h
 version.h: Makefile .git/index
 	@echo "GEN $@"
 	v="$$(cd $(srcdir) && git describe --always 2>/dev/null || true)"; \
-	echo "#define VERSION \"$${v:-$(VERSION)}\"" >$@
+	echo "#ifndef VERSION" >$@
+	echo "#define VERSION \"$${v:-$(VERSION)}\"" >>$@
+	echo "#endif" >>$@
 
 .git/index:
 

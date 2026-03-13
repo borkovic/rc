@@ -6,6 +6,7 @@
 typedef int64_t CalcValue;
 #include "calc.h"
 
+// typedef calctoken CalcToken;
 typedef int CalcToken;
 
 typedef struct CalcLexData {
