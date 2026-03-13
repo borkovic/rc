@@ -97,13 +97,15 @@ expr: expr CALC_OROR expr    { $$ = $1 || $3; }
 			eqeq = fopen("eqeq.txt", "w");
 		}
 		fprintf(eqeq, "(Y-Comparing %lld == %lld)\n", (long long)$1, (long long)$3);
+		fflush(eqeq);
 		printf("(Z-Comparing %lld == %lld)\n", (long long)$1, (long long)$3);
-		fflush(eqeq);
 		fflush(stdout);
+
 		$$ = ($1 == $3);
+
 		fprintf(eqeq, "(Y-Result of comparison %lld == %lld: %lld)\n", (long long)$1, (long long)$3, (long long)$$);
-		printf("(Z-Result of comparison %lld == %lld: %lld)\n", (long long)$1, (long long)$3, (long long)$$);
 		fflush(eqeq);
+		printf("(Z-Result of comparison %lld == %lld: %lld)\n", (long long)$1, (long long)$3, (long long)$$);
 		fflush(stdout);
 	}
 	| expr CALC_NEQ expr  { $$ = ($1 != $3); }
