@@ -51,19 +51,19 @@ config.h:
 
 lex.o parse.o: parse.c
 
-YACC=bison -y -d
+YACC=bison -d
 
-parse.c: parse.y
+parse.c parse.h: parse.y
 	@echo "GEN $@": $(YACC) calc -b $* -d $<
 	$(YACC) -b $* -d $<
 	mv $*.tab.c $*.c
-	mv $*.tab.h $*.h
+	# mv $*.tab.h $*.h
 
-calc.c: calc.y
+calc.c calc.h: calc.y
 	@echo "GEN $@": $(YACC) -p calc -b $* -d $<
 	$(YACC) -p calc -b $* -d $<
 	mv $*.tab.c $*.c
-	mv $*.tab.h $*.h
+	# mv $*.tab.h $*.h
 
 addon.o builtins.o fn.o hash.o sigmsgs.o signal.o status.o: sigmsgs.c
 
