@@ -203,9 +203,18 @@ fn testManyCalcs { numEntries=() exp=() val=() {
 	fail calc test 1 has odd number of entries: $numEntries, should be even.
   }
 
+  exp1 = '(' ^ $numEntries ^ ' % 2)'
+  echo exp1: $exp1
+  echo -n 'calculated exp1: '; calc -p $exp1
+
+  exp2 = '0 == 1'
+  echo exp2: $exp2
+  echo -n 'calculated exp2: '; calc -p $exp2
+
   oddExp='(' ^ $numEntries ^ ' % 2) == 1'
   echo oddExp: $oddExp
   echo -n 'calculated oddExp: '; calc -p $oddExp
+
   if (calc '('$numEntries'%2)==1') {
     fail calc test 2 has odd number of entries: $numEntries, should be even.
   }
