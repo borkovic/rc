@@ -55,7 +55,8 @@ config.h:
 	@echo "GEN $@"
 	cp "$(srcdir)/config.def.h" $@
 
-lex.o parse.o: parse.c parse.tab.h
+lex.o addon.o: parse.tab.h
+parse.o: parse.c parse.tab.h
 
 calc.o: calc.c calc.tab.h
 
