@@ -56,14 +56,14 @@ calc.o: calc.c calc.tab.h
 YACC=bison -d
 
 parse.c parse.tab.h: parse.y
-	@echo "GEN $@": $(YACC) calc -b $* -d $<
-	$(YACC) -b $* -d $<
+	@echo "GEN $@": $(YACC) parse -b parse -d $<
+	$(YACC) -b parse -d $<
 	mv parse.tab.c parse.c
 	# mv parse.tab.h parse.h
 
 calc.c calc.tab.h: calc.y
-	@echo "GEN $@": $(YACC) -p calc -b $* -d $<
-	$(YACC) -p calc -b $* -d $<
+	@echo "GEN $@": $(YACC) -p calc -b calc -d $<
+	$(YACC) -b calc -p calc -d $<
 	mv calc.tab.c calc.c
 	# mv calc.tab.h calc.h
 
