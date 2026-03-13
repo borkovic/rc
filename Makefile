@@ -106,6 +106,7 @@ version.h: Makefile .git/index
 check: trip testhist
 
 trip: rc tripping
+	@echo run trip.rc
 	./rc -p <"$(srcdir)/trip.rc"
 
 testhist: history
