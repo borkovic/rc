@@ -35,6 +35,12 @@ rc: $(OBJS)
 	[ "$(EDIT)" = "null" ] && ledit="" || ledit="-l$(EDIT)"; \
 	$(CC) $(_LDFLAGS) $(_CFLAGS) -o $@ $(OBJS) $$ledit $(LDLIBS)
 
+tripping: tripping.o
+	@echo "LINK $@"
+	$(CC) $(_LDFLAGS) $(_CFLAGS) -o $@ $<
+
+tripping.o: tripping.c
+
 $(OBJS): Makefile $(HEADERS) $(GEN_HEADERS) config.h
 builtins.o: addon.c
 exec.o: execve.c
