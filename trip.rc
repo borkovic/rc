@@ -83,22 +83,33 @@ for (n in 1 5 -3 11 -13) {
 	}
 }
 
-echo Testing 'calc 0 == 1'
-if (calc '0 == 1') {
-	fail calc test: '`calc 0 == 1`' should fail
+e='173 == 173'
+echo Testing '!' calc $e
+if (! calc $e) {
+	fail calc test: '`'calc $e'`' should succeed
 }
-echo Testing 'calc 0 != 0'
-if (calc '0 != 0') {
-	fail calc test: '`calc 0 != 0`' should fail
+
+e='2 == 3'
+echo Testing calc $e
+if (calc $e) {
+	fail calc test: '`'calc $e'`' should fail
 }
-echo Testing '! calc 0 == 0'
-if (! calc '0 == 0') {
-	fail calc test: '`calc 0 == 0`' should succeed
+e = '7 != 7'
+echo Testing $e
+if (calc $e) {
+	fail calc test: '`'calc $e'`' should fail
 }
-echo Testing '! calc 0 == 1'
-if (! calc '0 != 1') {
-	fail calc test: '`calc 0 != 1`' should succeed
+e = '8 == 8'
+echo Testing '!' calc $e
+if (! calc $e) {
+	fail calc test: '`'calc $e'`' should succeed
 }
+e = '234 == 235'
+echo Testing '!' calc $e
+if (calc $e) {
+	fail calc test: '`'calc $e'`' should fail
+}
+
 
 fn testOneCalc { v=() e=() a=() x=() {
   v=$1; shift
@@ -233,6 +244,7 @@ fn testManyCalcs { numEntries=() exp=() val=() {
   echo exp1: $exp1
   echo -n 'calculated exp1: '; calc -p $exp1
 
+  echo Checking for num entries.
   exp2 = '0 == 1'
   echo exp2: $exp2
   echo -n 'calculated exp2: '; calc -p $exp2
