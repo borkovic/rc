@@ -107,7 +107,7 @@ check: trip testhist
 
 trip: rc tripping
 	@echo run trip.rc
-	./rc -p <"$(srcdir)/trip.rc"
+	./rc -x -p <"$(srcdir)/trip.rc"
 
 testhist: history
 	cd "$(srcdir)/test-history" && make
