@@ -140,8 +140,8 @@ top:	sigchk();
 		break;
 	}
 	case nForin: {
-		List *volatile l;
 		List *var = glom(n->u[0].p);
+		List *volatile l = listcpy(glob(glom(n->u[1].p)), nalloc);
 		Jbwrap break_jb;
 		Edata  break_data;
 		Estack break_stack;
@@ -150,7 +150,7 @@ top:	sigchk();
 		break_data.jb = &break_jb;
 		except(eBreak, break_data, &break_stack);
 
-		for (l = listcpy(glob(glom(n->u[1].p)), nalloc); l != NULL; l = l->n) {
+		for (; l != NULL; l = l->n) {
 			Edata  iter_data;
 			Estack iter_stack;
 			assign(var, word(l->w, NULL), FALSE);
@@ -160,6 +160,7 @@ top:	sigchk();
 			unexcept(eArena);
 		}
 		unexcept(eBreak);
+		pop_cmdarg(TRUE);
 		break;
 	}
 	case nSubshell:
@@ -173,6 +174,7 @@ top:	sigchk();
 		if (n->u[0].p == NULL)
 			rc_error("null variable name");
 		assign(glom(n->u[0].p), glob(glom(n->u[1].p)), FALSE);
+		pop_cmdarg(TRUE);
 		break;
 	case nPipe:
 		dopipe(n);
@@ -188,6 +190,7 @@ top:	sigchk();
 			l = l->n;
 		}
 		set(TRUE);
+		pop_cmdarg(TRUE);
 		break;
 	}
 	case nRmfn: {
@@ -199,6 +202,7 @@ top:	sigchk();
 			l = l->n;
 		}
 		set(TRUE);
+		pop_cmdarg(TRUE);
 		break;
 	}
 	case nDup:
@@ -209,6 +213,7 @@ top:	sigchk();
 		if (dashex)
 			fprint(2, (a != NULL && a->n != NULL) ? "~ (%L) %L\n" : "~ %L %L\n", a, " ", b, " ");
 		set(lmatch(a, b));
+		pop_cmdarg(TRUE);
 		break;
 	}
 	case nSwitch: {
@@ -216,8 +221,10 @@ top:	sigchk();
 		while (1) {
 			do {
 				n = n->u[1].p;
-				if (n == NULL)
+				if (n == NULL) {
+					pop_cmdarg(TRUE);
 					return istrue();
+				}
 			} while (n->u[0].p == NULL || n->u[0].p->type != nCase);
 			if (lmatch(v, glom(n->u[0].p->u[0].p))) {
 				for (n = n->u[1].p; n != NULL && (n->u[0].p == NULL || n->u[0].p->type != nCase); n = n->u[1].p)
@@ -225,6 +232,7 @@ top:	sigchk();
 				break;
 			}
 		}
+		pop_cmdarg(TRUE);
 		break;
 	}
 	case nPre: {
@@ -253,6 +261,7 @@ top:	sigchk();
 				walk(n->u[1].p, parent);
 				varrm(v->w, TRUE);
 				unexcept(eVarstack);
+				pop_cmdarg(TRUE);
 			}
 		} else
 			panic("unexpected node in preredir section of walk");

@@ -1125,6 +1125,15 @@ submatch 'flag x x' 'usage: flag f [ + | - ]' 'flag wrong second arg'
 submatch 'flag c && echo yes' yes 'flag c'
 submatch 'flag x +; flag x -' 'flag x -' 'setting x flag'
 
+# test for cmdarg exception leak in various nodes
+$rc -c 'foo=<{true}' || fail 'cmdarg leak in nAssign'
+$rc -c 'for(i in <{true}) echo $i >/dev/null' || fail 'cmdarg leak in nForin'
+$rc -c 'foo=<{true} echo -n' || fail 'cmdarg leak in nPre'
+$rc -c 'fn foo { cat <{true} }' || fail 'cmdarg leak in nNewfn'
+$rc -c 'fn <{true} { }' || fail 'cmdarg leak in nRmfn'
+$rc -c '~ <{true} /dev/fd/*' || fail 'cmdarg leak in nMatch'
+$rc -c 'switch (<{true}) { case *; }' || fail 'cmdarg leak in nSwitch'
+
 #############################################################################
 # test for github issue #115
 
