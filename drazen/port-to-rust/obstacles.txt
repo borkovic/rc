@@ -1,0 +1,19 @@
+The following obstacles to porting rc to rust:
+
+1. Parsing. 
+Use `grmtools`/`lrpar`.
+Presence of 2 grammars: for rc itself (parse.y) and for calc (calc.y).
+Hopefully lrpar can handle both grammars.
+
+2. Arena memory allocator.
+Use `bumpalo` or `typed-arena`.??
+
+3. Exception handling.
+In C, exceptions are handled using `setjmp`/`longjmp`, which is not
+idiomatic in Rust. Exceptions also require undoing some operations,
+such as freeing local variables (and associated resources).
+Maybe change execution to issue abstract instructions in a vector
+and execute while walking that vector rather than recursing on the parse tree.
+This would allow for a more controlled execution flow and easier error handling.
+
+4. Anything else?
