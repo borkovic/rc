@@ -4,6 +4,8 @@ The following obstacles to porting rc to rust:
 Use `grmtools`/`lrpar`.
 Presence of 2 grammars: for rc itself (parse.y) and for calc (calc.y).
 Hopefully lrpar can handle both grammars.
+Current grammar causes lrpar errors. Probably most errors come from
+rulse (nonterminals) that could expand to an empty string.
 
 2. Arena memory allocator.
 Use `bumpalo` or `typed-arena`.??
