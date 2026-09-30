@@ -285,6 +285,67 @@ This decision affects essentially every other item in this document (the
 arena, the exception stack, hash tables), so it's worth resolving as a
 first design decision rather than deciding it file-by-file.
 
+**Decision: threaded `Shell` struct.** Rough shape, mapping each C global
+inventoried above to a field:
+
+```rust
+struct Shell {
+    arena: Arena,           // nalloc.c: ul/fl block lists
+    vars: VarTable,         // hash.c: vp (+ cdpath/CDPATH-style alias sync)
+    funcs: FnTable,         // hash.c: fp
+    input: InputStack,      // input.c: istack/itop/inbuf/chars_in/out/lineno
+    frames: Vec<Frame>,     // replaces except.c's estack — see §3
+    jobs: JobTable,         // wait.c: plist
+    signal_handlers: SignalHandlerTable, // fn.c: handlers[]/runexit (NOT signal.c's OS-level state, see below)
+    options: ShellOptions,  // main.c: dashdee/dashee/.../interactive/rc_pid/rc_ppid
+    exec: ExecState,        // redirq, cond, $status, lineno-adjacent exec-time state
+}
+```
+
+Interpreter functions become methods on `Shell` (or free functions taking
+`&mut Shell` as the first argument) — e.g. `fn varlookup(&self, name: &str)
+-> Option<&List>`, `fn nalloc(&mut self, ...) -> ArenaHandle`, `fn
+run(&mut self, code: &[Instr]) -> Result<Value, RcSignal>` for the VM loop
+from §3. One `Shell` value is created in `main`, and everything — parser
+actions, builtins, the VM loop, `fn`/`whatis` pretty-printing — operates
+through `&Shell`/`&mut Shell`, replacing C's implicit "reach into whatever
+global you need."
+
+Two things worth flagging now, before any code is written, because they're
+the likely friction points with this design:
+
+- **The arena can't hand out ordinary Rust references stored across `Shell`
+  method calls.** If `VarTable`/`FnTable` values (`List`s built via
+  `nalloc`) are represented as `&'arena [Word]` borrowed from
+  `Shell.arena`, then any method that needs `&mut self.arena` (to allocate
+  more) while a caller still holds a `&List` borrowed from an earlier
+  lookup will not compile — this is exactly the shape of borrow-checker
+  fight that "just thread a struct through" doesn't automatically avoid.
+  The practical fix is to *not* store borrowed arena references as the
+  value type in `VarTable`/`FnTable`/anywhere long-lived: use owned,
+  cheaply-cloneable values instead (`Rc<[Rc<str>]>` or a small
+  `Vec<Rc<str>>` per `List`, or an index/handle into a `slotmap`-style
+  arena rather than a lifetime-carrying reference). This does give up some
+  of the original allocator's raw speed advantage, but it sidesteps
+  fighting the borrow checker over arena-lifetime references threaded
+  through a mutable struct — a straight `&'arena` reference design and a
+  `&mut Shell`-per-call design are in tension with each other, and the
+  owned/`Rc`-based value representation is the way to have both.
+- **Not everything can move into `Shell`.** `signal.c`'s `sigcount`/
+  `caught[]` (`static volatile sig_atomic_t`) are touched directly by the
+  real OS signal handler (`catcher()`), which cannot safely dereference
+  into heap-allocated, non-`'static`, non-atomic application state — this
+  is a hard constraint of async-signal-safety, not a Rust-specific
+  limitation (the same is true in C; it's *why* the C code keeps these as
+  bare file-scope statics rather than, say, fields of some context struct
+  passed around). These stay as genuine Rust `static` atomics (`static
+  SIGCOUNT: AtomicUsize`, `static CAUGHT: [AtomicBool; NUMOFSIGNALS]`)
+  outside `Shell`, and `Shell::sigchk(&mut self)` reads them and does the
+  real (non-signal-context) dispatch — mirroring the split the C code
+  already has between `catcher()` (signal-context, statics only) and
+  `sigchk()` (normal context, touches everything else) rather than trying
+  to unify all state into one struct.
+
 ## 7. Process/job control and signal-handler-driven interpreter re-entrancy
 
 - `wait.c`/`exec.c`/`redir.c` do fork/exec/dup2/waitpid style job control,
