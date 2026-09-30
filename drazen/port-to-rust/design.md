@@ -372,6 +372,58 @@ rather than a load-bearing part of the runtime — it would only need to
 exist as a short-lived compiler-internal type if `%T`-equivalent behavior
 can be reduced to "return the stored source slice."
 
+### 4.1 Concrete resolution: transient `Ast`, source-backed functions
+
+- **A real `Ast` enum exists, but only as compiler input — nothing stores
+  it past one `compile(&Ast) -> Vec<Instr>` call.** Grammar actions (§1)
+  build `Ast` nodes (owned, `Box`ed, ordinary Rust — no arena needed for
+  this, since it's freed the moment compilation finishes); a separate
+  `compile` pass walks it and emits `Instr`s from §3.1, doing the jump
+  backpatching structured control flow needs (straightforward
+  recursive-descent codegen — no forward-declared cross-function labels
+  are needed, since `if`/`while`/`for`/`&&`/`||`/`switch` are all
+  structured constructs where the jump targets are known as soon as the
+  sub-`Ast` they bracket has finished compiling). Building the `Ast`
+  directly inside lrpar's per-production action code (rather than through
+  an intermediate/decoupled pass) is fine — it's a normal typed value, not
+  the C `Node` union — but doing backpatching-style codegen would be
+  awkward inside individual grammar actions, so `compile` is kept as its
+  own pass over a finished `Ast` rather than fused into parsing.
+- **Every `Ast` node built for a `fn` definition carries a source-text
+  span** (byte offsets into the original definition text, captured while
+  lexing/parsing). This is what makes "pretty-print = print the source"
+  concrete rather than aspirational: `whatis`/`%T`-equivalent output for a
+  function is a direct slice of stored source text, not a
+  decompiled-from-`Ast` reconstruction — which is also the only way to
+  honestly satisfy §13's "`whatis` output must be re-sourceable" bar,
+  since reformatting from a structured representation risks not
+  round-tripping through quoting/whitespace edge cases that the original
+  text trivially preserves.
+- **`rc_Function` becomes source-backed and lazily compiled**, directly
+  mirroring the existing C laziness pattern (`fnlookup`'s
+  `parse_fn(look->extdef)` + `treecpy` on first use) rather than
+  inventing a new one:
+  ```rust
+  struct RcFunction {
+      source: Rc<str>,                    // the `{ ... }` body text, for whatis/env export
+      compiled: OnceCell<Rc<[Instr]>>,     // lazily compiled on first call; invalidated on redefinition
+  }
+  ```
+  A function imported from the environment (`fn_name=...`) just sets
+  `source` and leaves `compiled` empty until first invocation — the same
+  "don't pay parse cost for functions that are never called" property
+  `fnlookup_string`/`fnassign_string` already have in C. Redefining a
+  function (`fn name {...}` again) replaces the whole `RcFunction`, so
+  there's no cache-invalidation subtlety beyond "assignment replaces the
+  value," matching `fnassign`'s current behavior of building a fresh
+  `rc_Function` unconditionally.
+- Top-level script statements (not inside a `fn`) don't need source spans
+  retained at all past the single `doit()`-equivalent iteration that
+  parses, compiles, and runs them (`-n`/`-x`'s "print each command as it's
+  parsed" flags, §"OPTIONS" `-n`, are the one exception — those need
+  *some* printable form at parse time, but only transiently, immediately
+  after parsing that one statement, not stored for later).
+
 ## 5. Custom extensible `printf`-family engine (`print.c`)
 
 rc has its own `fmtprint`/`fprint`/`mprint`/`nprint` implementing a
