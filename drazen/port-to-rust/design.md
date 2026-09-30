@@ -34,11 +34,12 @@ shell builtins (`echo`/`true`/`false`) still use. Subshells (`@{}`),
 background (`&`), and pipelines (real `pipe`/`fork`/`dup2`/`waitpid`
 chains, arbitrary stage counts) all work too, including the correct
 "strip Loop/Iter/Call frames after fork" rule generalized from the
-function-call case. Still missing: redirections touching actual file
-descriptors (see §13's note on a deliberate, considered divergence from C
-once this lands — redirected builtins shouldn't fork in this design,
-unlike `exec.c`), `calc.y`'s actions, backquote substitution, variable
-subscripting, and the remaining `Frame`/`RcSignal` variants (`Error`/
+function-call case. Redirections touch real file descriptors now too,
+via save/`dup2`/restore rather than forking (§13's deliberate divergence
+from `exec.c`, now confirmed working end-to-end: `break >/dev/null`
+inside a loop correctly breaks instead of erroring). Still missing:
+`calc.y`'s actions, backquote substitution, variable subscripting, and
+the remaining `Frame`/`RcSignal` variants (`Error`/
 `VarStack`/`Arena`/`Fd`/`Fifo`) — nothing
 compiled yet needs them.
 
@@ -1135,6 +1136,51 @@ redirection support, not chased as a silent regression to "fix" back to
 matching C's fork-induced error. Record the decision here now, ahead of
 implementing `Instr::Redirect` for real, so it isn't rediscovered as a
 surprising trip.rc mismatch later without the reasoning behind it.
+
+**Update: implemented, and the headline scenario is confirmed working
+end-to-end, not just designed.** `rc-rs` now applies redirections via
+save/`dup2`/restore around each command (`PushRedirScope`, matching
+`redir.c`'s `rc_open`/`mvfd` for the actual open+dup2, plus a save/restore
+step `redir.c` has no equivalent of, since C redirections normally run in
+a predictable freshly-forked child rather than in-place in a long-lived
+process). `for (i in (1 2)) {echo $i; break >/dev/null}` now prints `1`
+and stops, exactly the divergence from `trip.rc:518` predicted above,
+verified against the real `rc` binary for both implementations before
+trusting either result.
+
+Getting there surfaced the **same normal-path-vs-raised-path bug class
+found for `continue`/`PopIterFrame` (§3.2) a second time, in a new
+place** — worth treating as confirmation this is a recurring hazard of
+this VM design generally, not a one-off: the first implementation
+restored a command's redirects via a separate `PopRedirScope` instruction
+placed *after* `Exec` in the compiled stream. `break`/`continue`/`return`
+raised from inside that `Exec` jump straight to their target, skipping
+every instruction sequentially after `Exec` — including `PopRedirScope`,
+leaking the redirect permanently (`break >/dev/null` left fd 1 pointed at
+`/dev/null` for the rest of the process, confirmed by a corrupted test
+run, not by review). The fix generalizes the same principle §3.2 already
+stated: **anything that must clean up after an operation, where that
+operation might trigger a signal, must do its own cleanup unconditionally
+inside that operation's own instruction handler — never rely on a
+separate, sequentially-later instruction that a signal's jump can skip
+past.** `Exec` now restores its own redirect scope directly, every time,
+before deciding whether to propagate a signal outward. Two data points
+now support this as a general rule for every future frame/scope kind
+(`Arena`, `VarStack`, `Fd`, `Fifo`), not just the two already found it in.
+
+**A second, unrelated lesson from the same implementation pass, worth
+keeping for whoever writes VM tests going forward:** `cargo test`'s
+default multi-threaded runner puts every test in one process sharing one
+real fd table — `Redirect`/fork-based tests running concurrently reliably
+corrupted each other's fd 1 mid-redirect, since OS-level fd state is
+process-wide, not per-Rust-thread. Fixed with one shared
+`std::sync::Mutex` every fd/fork-touching test acquires first,
+serializing that portion of the suite. Any future test exercising real
+process/fd state needs to go through this lock too — it's easy to forget
+since most of this VM's tests (parsing, compiling, pure in-memory
+execution) have no such constraint, and the failure mode (an
+intermittent, hard-to-reproduce corrupted test) doesn't look like an
+obvious "you forgot to synchronize" symptom at first glance.
 
 ## Summary table
 
