@@ -9,11 +9,24 @@ grammars (`parse.y` for rc syntax, `calc.y` for `$((...))` arithmetic), a
 custom small-object arena allocator, a custom varargs formatting engine, and
 setjmp/longjmp-based control flow for break/continue/return/error unwinding.
 
-**Repository layout decision:** the Rust port will live in its own sibling
+**Repository layout decision:** the Rust port lives in its own sibling
 repository, `rc-rs`, alongside this repo (i.e. `../rc-rs` relative to this
 repo's root) rather than as a subdirectory of this C codebase — a
-from-scratch rewrite with its own git history, not a fork. Not yet
-scaffolded; this is a decision recorded ahead of implementation.
+from-scratch rewrite with its own git history, not a fork.
+
+**Implementation status (updated as `rc-rs` progresses — check its own
+commit history for the authoritative, current state; this is a snapshot,
+not a live view):** scaffolded and underway. Working end-to-end for a real
+(intentionally narrow) subset of the language: hand-written lexer
+(§1, `lexer.rs`) → lrpar-generated parser with typed actions producing a
+real `Ast` (§1.1/§1.2/§4.1, `parse.y`/`ast.rs`/`parse_glue.rs`) →
+`compile()` into the `Instr` bytecode (§3.1/§3.2, `instr.rs`/`compile.rs`)
+→ a real `Shell`/VM executing it (§3.2, `shell.rs`), including genuine
+`break`/`continue` unwinding through the frame stack inside a running
+`while` loop. Still missing: real process exec, pipelines/forking,
+redirections touching actual file descriptors, functions, `calc.y`'s
+actions, and most of the `Frame`/`RcSignal` variants (`Error`/`Return`/
+`VarStack`/`Arena`/`Fd`/`Fifo`) — nothing compiled yet needs them.
 
 ## 1. Parsing (grammar + lexer)
 
@@ -424,7 +437,7 @@ enum Instr {
     // --- loop/arena scaffolding (paired push/pop, not signal-based) ---
     PushLoopFrame(IP),         // Frame::Loop{break_target}; ~ except(eBreak, ...)
     PopLoopFrame,
-    PushIterFrame,             // Frame::Iter; ~ except(eContinue, ...) + a fresh Frame::Arena per iteration
+    PushIterFrame(IP),         // Frame::Iter{continue_target}; ~ except(eContinue, ...) + a fresh Frame::Arena per iteration
     PopIterFrame,
     ArenaCheckpoint, ArenaRestore, // Frame::Arena; ~ newblock()/restoreblock()
 
@@ -479,6 +492,83 @@ entry before executing anything. Skipping this step is exactly the bug
 class `trip.rc:518`/`:517` guard against: without it, `break`/`return` in
 a forked child would silently (and incorrectly) resolve against frame
 markers that belong to a loop/function in a *different process*.
+
+### 3.2 Implemented in `rc-rs`: real `Shell`/VM, one bug found via running code
+
+The design above is no longer just a sketch: `rc-rs`'s `src/instr.rs`,
+`src/compile.rs`, and `src/shell.rs` implement it end-to-end for a real
+(if intentionally narrow) subset — simple commands, pipes, `&&`/`||`,
+`if`/`else`, `while`, assignment, brace/body/bang/subshell/background —
+with `break`/`continue` genuinely executing through the frame stack inside
+a running `while` loop, not just structurally asserted. Deliberately not
+yet implemented: real process exec (`$path` search, `execve`, `wait4` —
+obstacle #7's territory), `Instr::Pipeline`/`Fork` (need real `fork()`),
+redirections actually touching file descriptors, and the `Error`/
+`Return`/`VarStack`/`Arena`/`Fd`/`Fifo` frame kinds (nothing compiled yet
+needs them — no functions, no arena, no error unwinding).
+
+**One correction the original sketch above got wrong, found only by
+running real `break`/`continue` and watching it panic, not by review:**
+`PushIterFrame` needed a `continue_target` field it didn't have above —
+now added (`PushIterFrame(IP)`, matching `PushLoopFrame(IP)`'s
+`break_target`). More importantly, that target must point *after* the
+loop body's `PopIterFrame` instruction, not *at* it. The reason mirrors a
+real asymmetry in `walk.c`'s `loop_body()`:
+
+```c
+if (sigsetjmp(cont_jb.j, 1) == 0) {
+    cont_data.jb = &cont_jb;
+    except(eContinue, cont_data, &cont_stack);
+    walk(n, TRUE);
+    unexcept(eContinue);   /* only reached on the NORMAL path */
+}
+```
+
+`unexcept(eContinue)` sits *inside* the `if (sigsetjmp(...) == 0)` body —
+it only runs when `walk()` returns normally. When `continue` actually
+fires, `siglongjmp` jumps back to the `sigsetjmp` call directly (returning
+nonzero), skipping the `if` body — including `unexcept` — entirely,
+because `rc_raise()`'s own unwind already popped the `eContinue` frame as
+part of finding it. A first implementation of `Shell::raise` (§3.1's
+`raise`) that pops the matching frame during its search, paired with a
+compiled `PopIterFrame` instruction that *unconditionally* pops on the
+normal path, double-pops when `continue` fires and jumps straight to that
+`PopIterFrame` instruction — popping the *next* frame down (the enclosing
+`Loop` frame) instead, since the `Iter` frame is already gone. Confirmed
+experimentally: this produced exactly that panic (`PushLoopFrame` found
+where an `Iter` frame was expected) before the fix. The fix is for
+`continue`'s target to land one instruction *past* `PopIterFrame`,
+skipping the redundant pop — mirroring `unexcept(eContinue)`'s own
+conditional-on-the-normal-path placement exactly, just expressed as "don't
+compile a pop instruction into the path `continue` actually takes"
+instead of C's runtime `if`.
+
+This is a concrete instance of a general lesson worth stating explicitly:
+**the frame-stack design's correctness depends on exactly matching which
+cleanup steps the original C code runs on the *raised* path versus the
+*normal* path for every frame kind — a distinction easy to get backwards
+by analogy/review alone, since both paths often "do the same cleanup" in
+the common case and only diverge in a specific reentry-timing detail like
+this one.** Worth deliberately auditing this same normal-vs-raised
+asymmetry for each remaining frame kind (`Arena`, `VarStack`, `Call`,
+`Fd`, `Fifo`) against its C counterpart when implementing them, rather
+than assuming the pattern established for `Loop`/`Iter` generalizes
+automatically.
+
+Also found while writing tests for this: two of the tests exercising
+`continue` were themselves genuine infinite loops (`while (true)` with no
+way to terminate), one explicitly commented as relying on "the test
+harness's own timeout" as its failure signal — confirmed by a real hung
+test run, not caught by inspection. Fixed by using `while ($x)` (execs
+whatever `$x` currently holds as a command name — `Ast::Var` already
+compiles through the same "atomic value, then `Exec`" path as any bare
+word command) to get a mutable, boundable loop condition without needing
+arithmetic or comparison operators, neither of which are compiled yet.
+Worth remembering as a general testing pattern for this VM until `calc.y`
+and `~` are wired up: loop termination in a test needs an actual state
+change the compiled subset can observe, not just "eventually something
+makes this false" reasoning that turns out to depend on unimplemented
+features.
 
 ## 4. The `Node` tree representation: tagged union with variable arity, built via C varargs
 
