@@ -43,27 +43,24 @@ Already identified. Additional detail:
   statement*, not the whole shell" semantics, and interactive mode must
   resync at the next input line.
 - `grmtools`/`lrpar` (LR) vs the original yacc (LALR with conflict
-  resolution via precedence/associativity declarations, and mid-rule
-  actions) — `parse.y` and `calc.y` both use mid-rule actions and
-  precedence declarations that may not map 1:1 to lrpar's conflict model;
-  this was already flagged as causing lrpar errors. A plausible fallback is
-  a hand-written recursive-descent/Pratt parser for both grammars instead
-  of a parser-generator port — rc's grammar is small enough that this may
-  actually be *less* work than fighting a different parser generator's
-  conflict resolution, and it sidesteps needing two generated parsers.
+  resolution via precedence/associativity declarations) — this was already
+  flagged as causing lrpar errors. **Correction after reading the actual
+  `parse.y`/`calc.y` source (an earlier draft of this doc, following
+  `obstacles.txt`, guessed the cause was mid-rule actions — that's wrong):
+  neither grammar has a single mid-rule (embedded) action.** Every action
+  in both files sits at the end of its production, which is exactly the
+  form lrpar/grmtools expects — this is good news, not a blocker. The
+  actual risk is narrower and is analyzed concretely in §1.1 below.
 - Confirmed from `rc.1`'s `GRAMMAR` section (the shipped skeletal grammar,
-  actions stripped): the empty-producible nonterminals are `cmd` (empty
-  command, `%prec WHILE`), `else` (`%prec ELSE`), `epilog`, `optcaret`,
-  `words`, `nlwords`, and `optnl` — seven rules, all resolved via
-  precedence declarations rather than restructuring the grammar to avoid
-  the ambiguity. lrpar (via its `yacc_kind: Original` mode) does support
-  `%left`/`%right`/`%nonassoc` precedence declarations including a
-  fictitious terminal used purely for precedence (rc's grammar already
-  does this itself — `%nonassoc PREDIR /* fictitious */` — so the pattern
-  isn't unprecedented for lrpar to need to reproduce), but each of these
-  seven empty productions is a concrete site to check individually against
-  lrpar's conflict reporting rather than assuming precedence declarations
-  alone will resolve them the same way LALR did.
+  actions stripped) and cross-checked directly against `parse.y`: the
+  empty-producible nonterminals are `cmd` (empty command, `%prec WHILE`),
+  `else` (`%prec ELSE`), `epilog`, `optcaret`, `words`, `nlwords`, and
+  `optnl` — seven rules, all resolved via precedence declarations rather
+  than restructuring the grammar to avoid the ambiguity (classic
+  dangling-else-style resolution: `cmd: /* empty */` competes with
+  shifting more tokens, resolved by giving the empty reduction low
+  precedence via `%prec`). See §1.1 for the concrete plan to validate this
+  against lrpar.
 - `rc.1`'s `BUGS` section documents "a compile-time limit on the number of
   `;`-separated commands in a line: usually 500" — this is a yacc/bison
   parser-stack-depth artifact (`YYMAXDEPTH`-style), not a deliberate
@@ -74,6 +71,98 @@ Already identified. Additional detail:
   requirement. (Full-parity `trip.rc` testing should not depend on this
   limit's exact value if it's intentionally dropped — worth checking
   `trip.rc` doesn't test for it.)
+
+### 1.1 Empirical check: byacc reports zero conflicts on both grammars
+
+Ran the project's own `byacc` (`byacc -t -v -d -b parse parse.y` /
+`-b calc calc.y`, `.output` inspected for the conflict summary byacc always
+emits when any shift/reduce or reduce/reduce conflict exists) against the
+actual grammar files as they exist in this repo today: **zero conflicts,
+in both `parse.y` and `calc.y`.** The seven empty productions in §1 and
+every `%prec`-tagged rule (`redir cmd %prec PREDIR`, `assign cmd %prec
+BANG`, `FN words %prec ELSE`, `simple: first/first args %prec ELSE`, the
+dangling-else `else` production, `optcaret`) fully resolve under the
+declared `%left`/`%right`/`%nonassoc` table — none of it is relying on
+byacc's default reduce-conflicts-silently-with-a-warning behavior. This is
+a materially different starting point than `obstacles.txt`'s "current
+grammar causes lrpar errors" note assumed, and **resolves the
+lrpar-vs-hand-written question in favor of lrpar**: since LR(1) (what
+lrpar/grmtools builds) is strictly more discriminating than LALR(1) (what
+byacc builds) — an LALR(1)-conflict-free grammar cannot pick up *new*
+conflicts by moving to LR(1), only potentially resolve borderline ones
+that LALR(1) merging would have caused — a verbatim transcription of this
+grammar and precedence table into lrpar's `YaccKind::Original` mode should
+also produce zero reported conflicts. The concrete next implementation
+step is exactly that: transcribe both grammars into `.y` files lrpar can
+consume, build with `CTLexerBuilder`/`CTParserBuilder`, and confirm the
+conflict count is zero — a fast, cheap, falsifiable check to run before
+committing further design effort to the grammar, and if it does surface a
+conflict lrpar/LR(1) genuinely can't resolve the way byacc/LALR(1) did,
+that's the actual, now-narrowed, decision point for falling back to
+hand-written recursive descent — not a default expectation.
+
+**Given this evidence, lrpar is the right call over a hand-written
+parser** (superseding the "plausible fallback" framing in the bullet
+above) — it gets you real error-recovery (CPCT+) essentially for free,
+and there's no longer a concrete reason on the table to expect grammar
+conflicts to force a rewrite. Worth still keeping recursive-descent as a
+documented contingency (see the item below on `YYABORT`, which is a real,
+separate gap lrpar doesn't paper over), but it's no longer the
+recommended primary path.
+
+**Decision: the grammar is not required to be a verbatim transcription.**
+The constraint is the accepted language and semantics, not the shape of
+`parse.y`/`calc.y` as yacc rules — so if lrpar's LR(1) construction (or
+just ordinary grammar hygiene) is better served by restructuring a
+production, that's in scope, as long as the same set of programs parses to
+equivalent behavior and `trip.rc` (§12) still passes. This matters
+concretely for the `YYABORT` gap right below: rather than contorting the
+grammar to fake yacc's mid-action abort inside lrpar, the heredoc-pending
+check in `end`/`cmdsan` (and the division-by-zero/negative-power checks in
+`calc.y`) can instead be restructured as an explicit post-reduce
+validation step outside the grammar's own production shape, since nothing
+about rc's *language* depends on that check happening to live inside a
+yacc action as opposed to right after the parser returns a value for that
+production — it's an implementation accident of how yacc actions
+happened to be the convenient place to put it, not accepted-language
+behavior worth preserving structurally.
+
+**Remaining real gap: `YYABORT`/`YYACCEPT` mid-action control flow.**
+Both grammars use yacc's ability to abort or accept the parse from inside
+an action, which has no lrpar equivalent (lrpar actions return typed
+values built bottom-up; they don't reach back into the parser's control
+state). Concrete sites: `parse.y`'s `end: END {...if (!heredoc(1))
+YYABORT;}` / `'\n' {...if (!heredoc(0)) YYABORT;}` and `cmdsan: cmd '\n'
+{...if (!heredoc(0)) YYABORT;}` (an unterminated heredoc at end-of-input
+or end-of-line is a *semantic*, not syntactic, error — discovered only
+once the heredoc-body collector realizes there's nothing left to read),
+`rc: line end {parsetree = $1; YYACCEPT;} | error end {yyerrok; parsetree
+= NULL; YYABORT;}` (the top-level error-recovery rule), and `calc.y`'s
+division-by-zero and negative-power `YYABORT`s. The idiomatic lrpar
+replacement — used in grmtools' own example grammars — is: give
+error-prone productions a `Result<T, ()>`-shaped semantic value (or thread
+a `&mut Vec<Error>` through the action via the user-supplied parser
+context), have the action push a diagnostic and return an error/sentinel
+value on failure, and let that sentinel propagate bottom-up through parent
+productions (which check for it and also short-circuit) rather than
+unwinding the parser itself; the top-level caller checks the accumulated
+error list once parsing finishes instead of relying on `YYABORT` to jump
+there directly. This is a small, well-trodden pattern, but it's a real
+rewrite at exactly five call sites, not a mechanical translation — worth
+prototyping early alongside the conflict-count check above, since it
+touches the heredoc-collection interaction from §1's lexer-statefulness
+point too (the heredoc collector needs a way to signal "still waiting for
+more input" vs. "reached EOF/EOL with an unterminated heredoc" back into
+whichever of these two representations the grammar action reads).
+
+**Dead code found while checking, not to port:** `calc.y`'s `CALC_EQEQ`
+action (`expr CALC_EQEQ expr`, i.e. `==`) unconditionally opens/writes/
+flushes a hardcoded `eqeq.txt` debug log file and duplicates the same
+message to stdout via `fprint` on every single `==` comparison a script
+evaluates — this is leftover debugging instrumentation, not shell
+behavior to replicate (it would also be a surprising, undocumented
+side-effecting file write in a from-scratch implementation if carried
+over by rote translation).
 
 ## 2. Arena allocator (`nalloc.c`)
 
