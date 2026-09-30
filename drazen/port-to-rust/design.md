@@ -1047,6 +1047,34 @@ catch as exact-behavior regressions, not just missing features:
   for the Rust port's target platforms (see §10) rather than either
   silently keeping or silently dropping it.
 
+**Deliberate divergence decision (not a gap — a considered improvement):
+redirected builtins should not fork in the Rust port.** `exec.c` forks
+before running a *redirected* builtin (`b != NULL && redirq != NULL`)
+purely to keep the redirection's fd-table changes from leaking into the
+parent shell once the command finishes — forking is C's *mechanism* for
+fd isolation here, not a deliberate statement that control flow should
+stop working. Its side effect, though, is real and tested:
+`trip.rc:518`'s `for(i in 1 2){echo $i;break >/dev/null}` gets
+`"break outside of loop"` specifically *because* the fork's `clearflow()`
+strips the `break`/`continue`/`return` frames before the redirected
+`break` ever runs (§3.2 traces this exactly). In the Rust VM, a
+redirection is just an `Instr::Redirect` manipulating an fd table — the
+same "don't leak the fd change" isolation is achievable by saving the
+target fd, applying the redirect, running the builtin, and restoring the
+saved fd, all *without* forking, since there's no process boundary
+involved in the first place. That means `break`/`continue`/`return`
+inside a redirected builtin would correctly reach the frame stack instead
+of being severed by a fork that only ever existed to protect an unrelated
+fd-table concern. **Adopting this is a deliberate, intentional behavioral
+divergence from the C implementation** — worth being explicit about
+precisely because `trip.rc` is the stated acceptance bar (§12):
+`trip.rc:518`'s specific assertion would need to be treated as a
+documented, deliberately-superseded test case when this VM reaches
+redirection support, not chased as a silent regression to "fix" back to
+matching C's fork-induced error. Record the decision here now, ahead of
+implementing `Instr::Redirect` for real, so it isn't rediscovered as a
+surprising trip.rc mismatch later without the reasoning behind it.
+
 ## Summary table
 
 | # | Obstacle | Novel vs. already-known (1-3)? | Recommended direction |
