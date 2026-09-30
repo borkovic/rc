@@ -27,11 +27,17 @@ and `for`, `switch`/`case`, and real (recursive) function calls with
 `return` unwinding through a `Call` frame — including the rule that
 `break`/`continue` cannot cross a function-call boundary, which turned
 out to be load-bearing for correctness, not just parity (§3.2 explains
-why). Still missing: real process exec, pipelines/forking, redirections
-touching actual file descriptors, `calc.y`'s actions, backquote
-substitution, variable subscripting, and the remaining `Frame`/`RcSignal`
-variants (`Error`/`VarStack`/`Arena`/`Fd`/`Fifo`) — nothing compiled yet
-needs them.
+why). Real external commands run too now (`$path` search + `fork`/
+`execv`/`waitpid`, `proc.rs`), inheriting this process's actual fds/
+environment directly rather than the in-memory capture the handful of
+shell builtins (`echo`/`true`/`false`) still use. Still missing:
+pipelines/forking for subshells and background commands, redirections
+touching actual file descriptors (see §13's note on a deliberate,
+considered divergence from C once this lands — redirected builtins
+shouldn't fork in this design, unlike `exec.c`), `calc.y`'s actions,
+backquote substitution, variable subscripting, and the remaining `Frame`/
+`RcSignal` variants (`Error`/`VarStack`/`Arena`/`Fd`/`Fifo`) — nothing
+compiled yet needs them.
 
 ## 1. Parsing (grammar + lexer)
 
@@ -862,13 +868,27 @@ the likely friction points with this design:
   `sigchk()` (normal context, touches everything else) rather than trying
   to unify all state into one struct.
 
-## 7. Process/job control and signal-handler-driven interpreter re-entrancy
+## 7. Process management and signal-handler-driven interpreter re-entrancy
 
-- `wait.c`/`exec.c`/`redir.c` do fork/exec/dup2/waitpid style job control,
+**Correction: rc has no interactive job control** (no `fg`/`bg`/`jobs`
+builtins anywhere in `builtins.c` — confirmed by grep, not just absence
+from `rc.1`'s builtin list). What `RC_JOB` (`config.def.h`) actually gates
+is narrower: putting a *background* (`&`) child into its own process
+group and having it ignore `SIGTTOU`/`SIGTTIN`/`SIGTSTP`, purely so a
+background job doesn't get stopped by the terminal the way a naive
+backgrounded child could — process-group hygiene for one specific case,
+not a job-control subsystem with suspend/resume semantics. `newpgrp`
+(`rc.1`) is a related but separate, coarser tool: it puts the *whole
+shell* in a new process group, for a specific job-control-hostile-terminal
+workaround (the NeXT Terminal case `rc.1` mentions), not per-job tracking.
+Worth having gotten this right up front, since "job control" is a
+misleading label for what this section actually needs to port — it's
+smaller in scope than that name implies.
+
+- `wait.c`/`exec.c`/`redir.c` do fork/exec/dup2/waitpid process management,
   which maps onto Rust fairly directly via `nix`/raw libc (there's no
-  portable safe Rust process-group/job-control API, so this stays `unsafe`
-  either way — not a blocker, just a note that this isn't a "safe Rust"
-  win).
+  portable safe Rust process-group API, so this stays `unsafe` either way
+  — not a blocker, just a note that this isn't a "safe Rust" win).
 - `fn.c`'s user-definable signal handlers (`fn sigint {...}`) call back
   into the **tree-walking interpreter from inside a signal handler path**
   (`fn_handler` → `funcall` → `walk()`), which is only safe in the current
@@ -919,7 +939,9 @@ semantics, presence of `/dev/fd`, `quad_t` vs `long`, void vs non-void
 `setpgrp()`...). A subset of these no longer matter on the platforms rc
 realistically targets today (Linux/macOS/BSD with POSIX signals), and can
 simply be dropped rather than ported; but the ones still relevant to
-Linux/macOS binary compatibility (job control differences, `/dev/fd`
+Linux/macOS binary compatibility (background-process pgrp/`SETPGRP_VOID`
+differences — see §7's correction that this isn't full job control,
+`/dev/fd`
 presence, restartable syscalls not existing anymore as a portable concept)
 need a real decision, not a mechanical `cfg!` translation, since some of
 these `#define`s encode assumptions (e.g. "SysV vs. BSD signal semantics")
