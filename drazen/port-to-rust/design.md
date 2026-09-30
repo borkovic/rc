@@ -110,6 +110,61 @@ documented contingency (see the item below on `YYABORT`, which is a real,
 separate gap lrpar doesn't paper over), but it's no longer the
 recommended primary path.
 
+### 1.2 Confirmed empirically: transcribed both grammars into real lrpar 0.15.0, zero conflicts
+
+Went further than the byacc check and actually built both grammars against
+real `lrpar`/`lrlex`/`cfgrammar` 0.15.0 (`CTParserBuilder`, `YaccKind::
+Original(YaccOriginalActionKind::NoAction)`, `error_on_conflicts(true)` —
+the strict default, left on) in a throwaway scratch crate. **Both `parse.y`
+and `calc.y`, transcribed with their exact token lists and precedence
+tables, build with zero reported conflicts.** This upgrades §1.1's
+prediction from "should also produce zero conflicts" to confirmed.
+
+To make sure this was a meaningful result and not a check that trivially
+passes, I sanity-tested the methodology by deliberately removing the
+`%prec BANG` annotation from `assign cmd %prec BANG` — this immediately
+and correctly produced three real shift/reduce conflicts (`cmd: /* empty
+*/` vs. shifting `ANDAND`/`OROR`/`PIPE`), reported with precise, readable
+diagnostics (better than byacc's, in fact — it names the exact competing
+shift and reduce, with a source pointer). Restoring `%prec BANG` returned
+the build to zero conflicts. So the zero-conflict result for the real
+grammar is trustworthy, not a false negative from a check that can't fail.
+
+Two genuine, previously-unflagged gaps surfaced while doing this — both
+are things a *verbatim* transcription cannot survive as-is, independent of
+the conflict question:
+
+- **grmtools has no equivalent of yacc's `error` token/rule at all** —
+  not "a differently-shaped one," none. Including `parse.y`'s literal `rc:
+  error end` production verbatim fails to build with `Unknown reference to
+  rule 'error'`: `error` isn't a reserved symbol lrpar recognizes as
+  meaning "the token stream the recoverer resynchronizes on." This isn't
+  a new problem for the `YYABORT` item above — it's a separate, more basic
+  one: the *production itself* has no home in the ported grammar; the
+  error-recovery intent it expressed (`yyerrok; parsetree = NULL;
+  YYABORT;` — treat a syntax error as "this statement produced nothing,
+  keep going") has to be reconstructed as caller-side logic around
+  whatever lrpar's CPCT+ recovery hands back (a parse result plus a list
+  of recovered-from errors), not as a grammar production to drop. Simply
+  delete this alternative when transcribing the grammar — it plays no role
+  in the accepted language, only in recovery mechanics, which now live at
+  the driver level instead.
+- **grmtools treats a "fictitious," precedence-only token (declared only
+  to be named in a `%prec`, never appearing in any production's body) as
+  an `Unused token`, and escalates that to a hard build error by default**
+  (`warnings_are_errors` defaults to `true`). Both of rc's fictitious
+  tokens — `PREDIR` in `parse.y`, `CALC_UNARY_PLUSMINUS` in `calc.y` — hit
+  this. Yacc/byacc allow the fictitious-token pattern unconditionally (it's
+  a well-known, intentional yacc idiom for injecting a precedence level
+  with no lexical representation); grmtools does not, by default. Workaround
+  confirmed: `CTParserBuilder::warnings_are_errors(false)` downgrades it to
+  a harmless warning and the build succeeds — a one-line builder-config
+  fix, not a grammar change, but worth recording explicitly so it isn't
+  rediscovered as a mystery build failure during real implementation. (If
+  `warnings_are_errors(true)` needs to stay on for other diagnostics, the
+  alternative is threading the fictitious token through one otherwise-dead
+  production instead.)
+
 **Decision: the grammar is not required to be a verbatim transcription.**
 The constraint is the accepted language and semantics, not the shape of
 `parse.y`/`calc.y` as yacc rules — so if lrpar's LR(1) construction (or
@@ -812,7 +867,7 @@ catch as exact-behavior regressions, not just missing features:
 
 | # | Obstacle | Novel vs. already-known (1-3)? | Recommended direction |
 |---|----------|-------------------------------|------------------------|
-| 1 | Dual yacc grammars + stateful lexer/heredoc coupling | Expands #1 | `grmtools`/`lrpar`; grammar must lose mid-rule actions/empty productions regardless of tool |
+| 1 | Dual yacc grammars + stateful lexer/heredoc coupling | Expands #1 | `grmtools`/`lrpar`, confirmed via real 0.15.0 build: both grammars transcribe with zero conflicts; drop the `error`-token production (no lrpar equivalent) and rework `YYABORT` sites as `Result`-sentinel propagation |
 | 2 | Nested/scoped arena tied to unwind, dual arena+permanent alloc | Expands #2 | Arena checkpoints become one `Frame` variant in the §3 VM frame stack; permanent storage is the compiled-function cache, not the arena |
 | 3 | setjmp/longjmp control flow: selective error/break/continue/return unwinding with per-frame cleanup | Expands #3 | Compile loop/branch structure itself to static `Jump`/`JumpIfFalse` (§3.1); keep `break`/`continue`/`return` as *dynamic signals* dispatched like any other command (they're shadowable builtins, not grammar keywords — confirmed via `rc.1`'s grammar + `exec.c`'s fn-before-builtin lookup + `trip.rc:517`/`:518`), walked through an explicit `Vec<Frame>` mirroring `Estack`'s nesting rules; forked children must strip Loop/Iter/Call frames (~`clearflow()`) |
 | 3c| Signal-handler-driven longjmp out of blocking syscalls | New, adjacent to #3 | Self-pipe/flag-and-poll at syscall retry points; drop the `slowbuf` fast-path bypass, keep `sigchk()`-style deferred handling |
