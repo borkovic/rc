@@ -1054,6 +1054,41 @@ target than "port looks equivalent." Concretely:
   edge cases before porting starts, since gaps there are gaps in the
   port's safety net, not just gaps in documentation.
 
+**Update: `rc-rs` now has a minimal CLI driver (previously none existed
+at all -- `fn main()` just printed `"Hello, world!"`), `trip.rc` is
+copied into `rc-rs` (`./trip.rc`), and running it surfaced the next real
+blocker directly rather than hypothetically.** It fails to parse at line
+~410 -- the first heredoc (`` <<eof ``). Heredoc/herestring body
+collection was already a known, explicitly-flagged gap (§1's lexer scope
+note, repeated at execution time in `shell.rs`'s `open_redirect`), but
+this pins it down as the *first* one `trip.rc` actually hits, ahead of
+`calc`'s arithmetic actions (`trip.rc` uses `calc` starting around line
+17, textually earlier, but that code never gets a chance to run) and
+`$0`/`$version` (also referenced early). Worth calling out why those
+earlier-in-the-file features don't matter yet even though they appear
+first: this port's `rc` grammar rule (§1.2) was made left-recursive
+specifically so one `lrpar` `parse()` call consumes an entire script at
+once (lrpar has no `YYACCEPT` for real rc's own per-statement,
+interactive-loop-driven parsing). That means **a single unimplemented
+construct anywhere in the file blocks parsing the *entire* file** --
+there's no partial credit the way real rc's interactive loop would give
+by executing everything up to the unsupported line before failing.
+That's a real, practical difference specifically for `trip.rc`-style
+whole-file acceptance testing (as opposed to hand-written unit tests,
+which only ever exercise one construct at a time and never hit this): it
+means the *textually first* unimplemented construct in the file is what
+gates all `trip.rc` progress, not necessarily the *most commonly used*
+one or the one highest on this document's own priority list. Two ways to
+address this, neither done yet: implement enough constructs to get a full
+parse (heredocs, then whatever's next), or change the driver to parse and
+run one top-level statement at a time (matching real rc's own model),
+so a script makes partial progress up to wherever it actually breaks --
+the latter is arguably the more valuable fix, since it would make every
+future `trip.rc` run informative instead of all-or-nothing, but wasn't
+attempted this session (it's a real restructuring of the parse driver
+built specifically around the single-`parse()`-call decision above, not
+a small change).
+
 ## 13. Full-parity semantic details easy to silently drop
 
 Since the port's scope is full feature parity (confirmed), the following
