@@ -9,6 +9,12 @@ grammars (`parse.y` for rc syntax, `calc.y` for `$((...))` arithmetic), a
 custom small-object arena allocator, a custom varargs formatting engine, and
 setjmp/longjmp-based control flow for break/continue/return/error unwinding.
 
+**Repository layout decision:** the Rust port will live in its own sibling
+repository, `rc-rs`, alongside this repo (i.e. `../rc-rs` relative to this
+repo's root) rather than as a subdirectory of this C codebase — a
+from-scratch rewrite with its own git history, not a fork. Not yet
+scaffolded; this is a decision recorded ahead of implementation.
+
 ## 1. Parsing (grammar + lexer)
 
 Already identified. Additional detail:
