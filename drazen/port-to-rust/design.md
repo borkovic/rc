@@ -936,17 +936,44 @@ one, and easy to overlook since it's invisible at the `.c` file level.
 `HAVE_RESTARTABLE_SYSCALLS`, `HAVE_DEV_FD`, `SETPGRP_VOID`, `RLIM_T_IS_QUAD_T`,
 etc.) reflecting real historical portability needs (BSD vs SysV signal
 semantics, presence of `/dev/fd`, `quad_t` vs `long`, void vs non-void
-`setpgrp()`...). A subset of these no longer matter on the platforms rc
-realistically targets today (Linux/macOS/BSD with POSIX signals), and can
-simply be dropped rather than ported; but the ones still relevant to
-Linux/macOS binary compatibility (background-process pgrp/`SETPGRP_VOID`
-differences — see §7's correction that this isn't full job control,
-`/dev/fd`
-presence, restartable syscalls not existing anymore as a portable concept)
-need a real decision, not a mechanical `cfg!` translation, since some of
-these `#define`s encode assumptions (e.g. "SysV vs. BSD signal semantics")
-that don't have a 1:1 modern equivalent. Worth an explicit prune-and-decide
-pass rather than assuming every macro needs a Rust `cfg`.
+`setpgrp()`...).
+
+**Target platform decision: macOS, Ubuntu, and CentOS (i.e. modern
+Linux/glibc plus macOS/Darwin) — not the full historical Unix portability
+spectrum the C implementation supports.** This resolves the
+prune-and-decide call this section used to leave open into an actual
+answer: nearly every one of these ~30 macros exists to handle a Unix
+variant or vintage outside that target list (SysV-vs-BSD signal
+semantics, systems without `/dev/fd`, non-POSIX `getgroups`/`setpgrp`,
+`quad_t`-only platforms, non-restartable syscalls). Concretely, given the
+target list:
+- `HAVE_SIGACTION`, `HAVE_DEV_FD`, `HAVE_POSIX_GETGROUPS`, `HAVE_SETRLIMIT`,
+  `SETPGRP_VOID`-style POSIX behavior: always true on all three targets —
+  don't gate these behind a `cfg` at all, just assume POSIX.
+- `HAVE_SYSV_SIGCLD` and the whole BSD-vs-SysV signal-semantics split: SysV
+  semantics don't apply to any of the three targets — drop entirely,
+  including the `fn.c` "can't trap SIGCHLD on SysV" carve-out §13 flagged
+  as needing a decision (decided: drop it, don't replicate it).
+- `HAVE_RESTARTABLE_SYSCALLS`/`slowbuf`: modern Linux and macOS both
+  restart syscalls by default (`SA_RESTART` semantics) — the whole
+  `rc_read`/`rc_wait`/`slowbuf` portability shim (already flagged in §3 as
+  needing a signal-safety redesign regardless) can drop the "syscalls
+  don't restart" branch entirely, not just redesign it.
+- `RLIM_T_IS_QUAD_T`/`HAVE_QUAD_T`: irrelevant on any modern 64-bit target
+  — `rlim_t` is a real type everywhere that matters now.
+- The one real remaining split: macOS/Darwin vs. Linux/glibc differences
+  that *do* still exist today (e.g. some `getrlimit`/resource-constant
+  values, `/proc/self/fd` existing on Linux but not macOS — macOS has
+  `/dev/fd` though, so §1.2's `<{cmd}` tiering still needs at least a
+  Linux/macOS `cfg`, just not the historical three-tier
+  `/dev/fd`/`/proc/self/fd`/named-pipe fallback the C code supports for
+  older systems — two tiers, or even just one (`/dev/fd`, present on both
+  targets), may suffice).
+
+Net effect: obstacle #10 shrinks substantially under this target list —
+most of these macros are just gone, not translated, and the ones that
+remain are ordinary `#[cfg(target_os = "...")]` splits between exactly two
+OS families, not an open-ended portability matrix.
 
 ## 11. Historical note: this analysis supersedes/duplicates two smaller notes already in `drazen/`
 
