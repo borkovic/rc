@@ -21,12 +21,17 @@ not a live view):** scaffolded and underway. Working end-to-end for a real
 (§1, `lexer.rs`) → lrpar-generated parser with typed actions producing a
 real `Ast` (§1.1/§1.2/§4.1, `parse.y`/`ast.rs`/`parse_glue.rs`) →
 `compile()` into the `Instr` bytecode (§3.1/§3.2, `instr.rs`/`compile.rs`)
-→ a real `Shell`/VM executing it (§3.2, `shell.rs`), including genuine
-`break`/`continue` unwinding through the frame stack inside a running
-`while` loop. Still missing: real process exec, pipelines/forking,
-redirections touching actual file descriptors, functions, `calc.y`'s
-actions, and most of the `Frame`/`RcSignal` variants (`Error`/`Return`/
-`VarStack`/`Arena`/`Fd`/`Fifo`) — nothing compiled yet needs them.
+→ a real `Shell`/VM executing it (§3.2, `shell.rs`). Control flow is for
+real, not just structurally asserted: `break`/`continue` inside `while`
+and `for`, `switch`/`case`, and real (recursive) function calls with
+`return` unwinding through a `Call` frame — including the rule that
+`break`/`continue` cannot cross a function-call boundary, which turned
+out to be load-bearing for correctness, not just parity (§3.2 explains
+why). Still missing: real process exec, pipelines/forking, redirections
+touching actual file descriptors, `calc.y`'s actions, backquote
+substitution, variable subscripting, and the remaining `Frame`/`RcSignal`
+variants (`Error`/`VarStack`/`Arena`/`Fd`/`Fifo`) — nothing compiled yet
+needs them.
 
 ## 1. Parsing (grammar + lexer)
 
@@ -569,6 +574,76 @@ and `~` are wired up: loop termination in a test needs an actual state
 change the compiled subset can observe, not just "eventually something
 makes this false" reasoning that turns out to depend on unimplemented
 features.
+
+**Since this section was written, `rc-rs` has also implemented `switch`/
+`case`, `for`, and real function calls (`fn`/`return`), each adding a
+real, tested instance of the same normal-vs-raised-path auditing §3.2
+already called for — worth recording concretely rather than just noting
+the pattern held:**
+
+- **`for`'s `break` needed the identical fix as `while`'s `continue`, for
+  a different reason.** `walk.c`'s `nForin` installs its `eBreak` frame
+  *unconditionally*, before ever checking whether the list is empty —
+  unlike `nWhile`, which only installs it once the first test has already
+  passed. That removes the "never entered, no frame exists to pop" case
+  `while` needed a bypass for, but introduces the same two-exit-paths
+  shape for the opposite reason: the natural "list exhausted, no signal
+  raised" fallthrough must explicitly `PopLoopFrame` (the frame is still
+  there), while `break`'s own target must land *after* that pop, since
+  `raise()` already removed the frame by the time it jumps there. Same
+  underlying principle as §3.2's `continue` fix, confirmed to generalize
+  to a second frame kind and a different triggering condition (loop-body
+  exhaustion vs. mid-body `continue`) rather than being a one-off.
+- **Function calls forced an architectural fork the original §3.1 sketch
+  didn't anticipate.** `Loop`/`Iter`'s `break_target`/`continue_target`
+  are jump offsets *within the currently-executing `Program`* — that's
+  fine as long as every frame's resume point lives in the same flat
+  instruction array. A function call breaks that assumption: it runs a
+  wholly different, unrelated `Program` (the callee's body), so `return`
+  finding its `Call` frame can't resume by jumping to an `Ip`, the way
+  `break`/`continue` do — there is no meaningful offset to jump to in a
+  *different* array. `raise()`'s return type had to split into
+  `RaiseOutcome::{Jump(Ip), ReturnFromCall}`: `Jump` resumes the current
+  `Program` (the `Loop`/`Iter` case), `ReturnFromCall` instead unwinds the
+  *entire current recursive `run()` invocation* back out to whichever
+  `call_function` call started it — real Rust call-stack recursion, not
+  an instruction-pointer jump. `Call` frames are correspondingly pushed
+  and popped by `call_function` itself, not by any compiled `Instr` the
+  way `PushLoopFrame`/`PopLoopFrame` are — a function's boundary is
+  `call_function`'s own Rust stack frame, not an offset in its callee.
+- **This is also *why* `break`/`continue` crossing a `Call` frame must be
+  a hard error, not just a nicety worth adding for parity.** If `raise()`
+  let `Break` pop through a `Call` frame to reach an outer `Loop` frame
+  belonging to the *caller's* `Program`, the resulting `Jump(break_target)`
+  would be applied to the *callee's* currently-executing `Program` — an
+  offset meaningful only in a different, unrelated instruction array.
+  This is silent memory-safety-adjacent corruption of control flow, not
+  "jumps to a slightly wrong place": confirmed both by re-reading
+  `except.c`'s `rc_raise` (its nesting-rule table already disallows
+  `eBreak`/`eContinue` from passing an `eReturn` frame) and empirically
+  against the real `rc` binary (`fn b { break }; for (i in (1 2)) { b }`
+  → `rc: line 0: break outside of loop`) before implementing the check,
+  and covered by a test that fails loudly if the check is ever removed.
+- **`$1`/`$2`/... are not variables literally named `"1"`/`"2"`.**
+  `var.c`'s `varlookup()` treats any purely-numeric name as a 1-based
+  index into `$*` — a runtime-lookup-time special case, not a grammar or
+  lexer distinction (`$1` parses through the exact same `'$' sword`
+  production as `$x`). Missed on the first pass (a real function-argument
+  test caught it: `fn greet { echo hi $1 }; greet world` produced `hi`
+  with no `world`), fixed, and verified against the real binary
+  (`echo $1 $2 $3` with `one two three` as arguments) rather than assumed
+  from reading `var.c` alone, since the loop structure there is easy to
+  mis-trace by eye (whether it's 0- or 1-indexed isn't obvious from the
+  code's own shape without running it).
+
+Empirical verification against the real `rc` binary (available locally)
+has been a running theme worth calling out as a general practice, not
+just a one-off for this section: several of the behaviors above (`lmatch`
+cross-product semantics, `switch`'s no-fallthrough shape, `return`'s
+status-setting, `$1`'s indexing) were confirmed by *running* real rc
+scripts before committing to an implementation, not solely by reading the
+C source — the source and a plausible reading of it are not the same
+thing, and this session repeatedly found the gap between them.
 
 ## 4. The `Node` tree representation: tagged union with variable arity, built via C varargs
 
