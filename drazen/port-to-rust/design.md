@@ -37,10 +37,16 @@ chains, arbitrary stage counts) all work too, including the correct
 function-call case. Redirections touch real file descriptors now too,
 via save/`dup2`/restore rather than forking (§13's deliberate divergence
 from `exec.c`, now confirmed working end-to-end: `break >/dev/null`
-inside a loop correctly breaks instead of erroring). Still missing:
-`calc.y`'s actions, backquote substitution, variable subscripting, and
-the remaining `Frame`/`RcSignal` variants (`Error`/
-`VarStack`/`Arena`/`Fd`/`Fifo`) — nothing
+inside a loop correctly breaks instead of erroring). Variable
+subscripting (`$var(n)`, `$var(m-n)`, `$var(m-)`, ported from `glom.c`)
+works too, including its exact clamping/skip-vs-error edge cases,
+confirmed against the real binary. `Ast::Pre` (local-assignment and
+redirection prefixes, `a=foo cmd` / `>file cmd`, `walk.c`'s `nPre`) is
+implemented via two new always-signal-transparent frame kinds,
+`Frame::VarStack`/`Frame::Redir` (§13 adds detail on the redir-prefix
+divergence this needed, parallel to the postfix-redirect one). Still
+missing: `calc.y`'s actions, backquote substitution, `Nmpipe`, and the
+remaining `Frame`/`RcSignal` variants (`Error`/`Arena`/`Fifo`) — nothing
 compiled yet needs them.
 
 ## 1. Parsing (grammar + lexer)
@@ -1181,6 +1187,49 @@ since most of this VM's tests (parsing, compiling, pure in-memory
 execution) have no such constraint, and the failure mode (an
 intermittent, hard-to-reproduce corrupted test) doesn't look like an
 obvious "you forgot to synchronize" symptom at first glance.
+
+**Update: the shared-lock fix above narrows but doesn't eliminate this
+class of flakiness.** Reproduced independently of `Ast::Pre`: even on the
+commit *before* `Ast::Pre` existed, a default multi-threaded `cargo test`
+run failed intermittently (~1 in 8 runs observed) with real `rc`-shell
+stdout output showing up inside a test's redirected-file assertion. The
+shared `Mutex` only serializes *fd-mutating* tests against each other; it
+does nothing to stop the test harness's own `println!`-based progress
+output — printed from other, non-locked worker threads — from landing in
+whichever file fd 1 happens to be redirected to at that instant. Confirmed
+this is a pre-existing gap, not something `Ast::Pre` introduced: `--test-
+threads=1` runs are consistently clean (5/5 observed). Not fixed yet —
+would need either running fd-touching tests under a forced single thread
+(a `#[test]`-level annotation Rust doesn't have natively) or redirecting a
+fd the harness itself doesn't write progress through. Worth fixing before
+leaning harder on real-fd-redirection tests (`Nmpipe`, heredocs will add
+more of them), but out of scope for the `Ast::Pre` milestone itself.
+
+**Extending the postfix-redirect no-fork divergence to prefix redirects
+too (`Ast::Pre`'s `Ast::Redir`/`Ast::Dup` branch, `walk.c`'s `nPre`
+case).** Confirmed against the real `rc` binary that C's behavior here is
+actually *more* fork-happy than the postfix case, not just the same: a
+redir/dup *prefix* (`>file cmd`) always forks in `walk.c`, unconditionally
+— unlike the assign-prefix branch of the same `nPre` case, which checks
+`isallpre()` and only ever uses a real `eVarstack` exception frame (no
+fork at all). Empirically, this means `break`/`continue` inside a
+`>file cmd`-prefixed command inside a loop reports `"break outside of
+loop"` in real `rc`, for the exact same reason as `trip.rc:518`'s postfix
+case: the fork's `clearflow()`-equivalent strips the loop frame before the
+prefixed `break` runs. `rc-rs` applies the same reasoning as the postfix
+divergence uniformly here: a new `Frame::Redir` (parallel to
+`Frame::VarStack` for the assign-prefix case) saves/restores the fd
+without forking, so `break`/`continue`/`return` inside a redir/dup-
+prefixed command now correctly reach the outer loop/function frame — a
+second, deliberate, documented divergence from `trip.rc`-observable C
+behavior, verified end-to-end (`for (i in 1 2 3) { >/dev/null break; ...}`
+now actually breaks the loop, where real `rc` prints the error three times
+and never does). `Frame::Redir`/`Frame::VarStack` are both unconditionally
+transparent to every signal in `raise()` (matching `eVarstack`/`eFd`'s
+always-passable status in `except.c`'s nesting rules), which is also what
+makes the assign-prefix scoping case (`a=foo cmd`) work correctly through
+a `return` unwind without any special-casing beyond the frame-stack walk
+already built for `Break`/`Continue`/`Call`.
 
 ## Summary table
 
