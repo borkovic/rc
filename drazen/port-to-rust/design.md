@@ -44,10 +44,18 @@ confirmed against the real binary. `Ast::Pre` (local-assignment and
 redirection prefixes, `a=foo cmd` / `>file cmd`, `walk.c`'s `nPre`) is
 implemented via two new always-signal-transparent frame kinds,
 `Frame::VarStack`/`Frame::Redir` (§13 adds detail on the redir-prefix
-divergence this needed, parallel to the postfix-redirect one). Still
-missing: `calc.y`'s actions, backquote substitution, `Nmpipe`, and the
-remaining `Frame`/`RcSignal` variants (`Error`/`Arena`/`Fifo`) — nothing
-compiled yet needs them.
+divergence this needed, parallel to the postfix-redirect one). Backquote
+substitution (`` `cmd ``, `` `{brace} ``, `` ``ifs cmd ``, `glom.c`'s
+`backq`/`bqinput`) works too — a real fork with the child's stdout
+captured through a pipe (not just inherited, unlike `Fork`), split on
+`$ifs` with the documented separator-run-collapsing behavior preserved.
+Writing its tests surfaced (and fixed) two real gaps in `$status`
+handling that predate `Ast::Backq` itself: `$status` wasn't wired to
+`var_lookup` at all, and `Exec`'s empty-argv path incorrectly reset
+`$status` to `0` instead of leaving it untouched (§13 has the detail).
+Still missing: `calc.y`'s actions, `Nmpipe`, and the remaining `Frame`/
+`RcSignal` variants (`Error`/`Arena`/`Fifo`) — nothing compiled yet needs
+them.
 
 ## 1. Parsing (grammar + lexer)
 
@@ -1230,6 +1238,67 @@ always-passable status in `except.c`'s nesting rules), which is also what
 makes the assign-prefix scoping case (`a=foo cmd`) work correctly through
 a `return` unwind without any special-casing beyond the frame-stack walk
 already built for `Break`/`Continue`/`Call`.
+
+**Backquote substitution implemented; two pre-existing `$status` gaps
+found and fixed along the way, both confirmed against the real binary
+before changing anything.** `Instr::Backq` forks, captures the child's
+stdout through a real pipe instead of inheriting fds (`glom.c`'s
+`backq`), and splits on `$ifs` via a direct port of `bqinput`'s
+collapsing-separator-runs FSA. Writing real tests for it (rather than
+just structural ones) exposed two things that had nothing to do with
+backquotes specifically, just hadn't been exercised yet:
+
+1. `$status` wasn't wired to anything — `var_lookup` only ever consulted
+   `self.vars`, so `$status` silently read as empty. This didn't matter
+   until something needed to *read back* `$status` as a variable rather
+   than just observe `Shell::status` directly from test code — a
+   backquote followed by `echo $bqstatus status=$status` was the first
+   real case. Fixed by special-casing `"status"` in `var_lookup` to
+   return `self.status` live, the same way `$1`/`$2`-style numeric
+   shorthand is already special-cased there. (Still not `$status`'s real
+   shape — real rc's `$status` is a *list*, one element per pipeline
+   stage, `status.c` — that stays an open gap, just no longer a total one.)
+2. `Exec`'s empty-`av` path (reached when a value-position construct
+   evaluates to zero words, e.g. an unset variable or — now — a
+   backquote that captured no output, used as a bare command) was
+   setting `$status = 0`, on the theory that an empty command is
+   "vacuously true" like `walk()`'s `n == NULL` case. That theory
+   conflated two different things: `walk()`'s `n == NULL` (a literally
+   *absent* `cmd` node, e.g. an empty `else`) really does `set(TRUE)`,
+   but that's `compile_cmd`'s `Ast::Empty` arm here, which already
+   correctly no-ops without touching `$status` at all — it never reaches
+   `exec`. A *non-null* node that merely *evaluates* to an empty word
+   list is a different code path in `exec.c` entirely (`*av == NULL`
+   inside `exec()` itself), and it does **not** reset status — confirmed
+   against the real binary (`false; $nosuchvar; echo $status` prints
+   `1`, not `0`; real rc gets this by forking anyway just to still apply
+   any queued redirect, then exiting with whatever `getstatus()` already
+   was). Fixed by leaving `self.status` untouched in this VM's
+   equivalent path — no fork needed here either, for the same reason
+   postfix/prefix redirects don't need one.
+
+**Test-infrastructure hardening, prompted by a real hang mid-session, not
+by a language-semantics question.** A test genuinely wedged the whole
+suite: every fd-touching test reported "running for over 60 seconds"
+simultaneously, which is the signature of one test holding
+`PROCESS_TEST_LOCK` and never releasing it (a real bug — a pipe read
+that never saw EOF, in code that turned out to still be mid-edit at the
+time) rather than N independently slow tests. A plain `.lock()` has no
+way to distinguish "the lock-holder is just doing real, slightly slow
+I/O" from "the lock-holder is permanently stuck" — both look identical
+from every other thread's perspective, and cargo's own progress output
+can't tell you which specific test is the one actually holding the lock
+versus the ones merely queued behind it. Replaced with a bounded
+acquire (`crate::process_test_lock` in `main.rs`, `PROCESS_TEST_LOCK`
+itself unchanged): a 10-second `try_lock` polling loop that panics with
+an explicit "still held after 10s" message instead of blocking forever.
+This doesn't fix a hang — it turns an indefinite, hard-to-attribute wedge
+of the entire suite into one clearly-labeled failing test, which is the
+actual, durable improvement. The real fix — giving every test its own
+process (`cargo-nextest`) so there's no shared fd table to protect in the
+first place, which would let this whole `PROCESS_TEST_LOCK` mechanism be
+deleted outright — isn't set up in this environment; worth adopting
+before `Nmpipe`/heredocs add more real-fd tests to the pile.
 
 ## Summary table
 
