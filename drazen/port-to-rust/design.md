@@ -30,13 +30,16 @@ out to be load-bearing for correctness, not just parity (§3.2 explains
 why). Real external commands run too now (`$path` search + `fork`/
 `execv`/`waitpid`, `proc.rs`), inheriting this process's actual fds/
 environment directly rather than the in-memory capture the handful of
-shell builtins (`echo`/`true`/`false`) still use. Still missing:
-pipelines/forking for subshells and background commands, redirections
-touching actual file descriptors (see §13's note on a deliberate,
-considered divergence from C once this lands — redirected builtins
-shouldn't fork in this design, unlike `exec.c`), `calc.y`'s actions,
-backquote substitution, variable subscripting, and the remaining `Frame`/
-`RcSignal` variants (`Error`/`VarStack`/`Arena`/`Fd`/`Fifo`) — nothing
+shell builtins (`echo`/`true`/`false`) still use. Subshells (`@{}`),
+background (`&`), and pipelines (real `pipe`/`fork`/`dup2`/`waitpid`
+chains, arbitrary stage counts) all work too, including the correct
+"strip Loop/Iter/Call frames after fork" rule generalized from the
+function-call case. Still missing: redirections touching actual file
+descriptors (see §13's note on a deliberate, considered divergence from C
+once this lands — redirected builtins shouldn't fork in this design,
+unlike `exec.c`), `calc.y`'s actions, backquote substitution, variable
+subscripting, and the remaining `Frame`/`RcSignal` variants (`Error`/
+`VarStack`/`Arena`/`Fd`/`Fifo`) — nothing
 compiled yet needs them.
 
 ## 1. Parsing (grammar + lexer)
