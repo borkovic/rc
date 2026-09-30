@@ -127,19 +127,60 @@ plain data instead of relying on `Drop`/panics as control flow). The shape:
 
 - Compile the parse tree (or compile directly from parser actions,
   see the note on `Node` in §4) into a flat `Vec<Instr>` per compiled unit
-  (function body, top-level statement, loop body). `break`/`continue`
-  become `Jump`/`JumpIfFalse` to a resolved offset — this is exactly what
-  a bytecode compiler does with loop targets, and it eliminates
-  break/continue as a control-flow *problem* entirely: there is no
-  non-local jump, just `ip = target` in the dispatch loop. This is
-  strictly easier than even the "just use a Rust `enum ControlFlow`
-  threaded through recursive `walk()` calls" approach floated for this
-  case in an earlier draft — with a flat instruction array you don't need
-  to thread anything back up through recursive call frames at all.
-- `return` becomes a jump back through an explicit **call-frame stack**
-  you maintain as VM state (`Vec<Frame>` with return addresses/instruction
-  pointers), not the Rust call stack. Function calls push a frame, `return`
-  pops it and jumps to the saved return address.
+  (function body, top-level statement, loop body). The loop constructs'
+  **own** test/body/back-edge control flow — `while`'s test-then-loop,
+  `for`'s iteration, `if`/`else` branching, `&&`/`||` short-circuiting,
+  `switch`/`case` dispatch — compiles straight to `Jump`/`JumpIfFalse` at
+  fixed, statically-known offsets, exactly like any bytecode compiler's
+  loop/branch codegen. That part really is a non-problem once you're not
+  tree-walking.
+- **Correction to an easy mistake here: `break`/`continue`/`return` are
+  *not* syntax rc's grammar can resolve to a jump target at compile time —
+  they're ordinary builtin *commands*, dispatched dynamically, same as any
+  other command word.** Confirmed from three places: `rc.1`'s shipped
+  grammar (`GRAMMAR` section) doesn't list `break`/`continue`/`return` in
+  its `keyword` production at all — they're plain `WORD` tokens; `exec.c`
+  resolves a command name against the *function* table before the builtin
+  table (`!saw_builtin && fnlookup(*av) != NULL` wins over
+  `isbuiltin(*av)`), so a user can shadow `break` with `fn break {...}` and
+  the shadowed version always wins — the compiler cannot know at compile
+  time whether a given `break` token will resolve to the real builtin,
+  since `fn` definitions are fully dynamic; and `except.c`'s `rc_raise`
+  applies *dynamic call-stack* nesting rules when the real `break` builtin
+  does run (`rc_raise(eBreak)` errors with `"break outside of loop"` if it
+  hits an `eReturn` frame — a function-call boundary — before finding an
+  `eBreak` frame, even though the call may be lexically inside a loop one
+  frame up). `trip.rc` (`trip.rc:518`) tests exactly the case that exposes
+  this dynamism: `for(i in 1 2){echo $i;break >/dev/null}` reports
+  `"break outside of loop"` for *both* iterations — the redirection on
+  `break` forces a fork (`dofork()` in `walk.c`'s `nPre` case), and the
+  forked child's copy of the exception stack has had its
+  `eBreak`/`eContinue`/`eReturn` frames stripped by `clearflow()` (called
+  from `rc_fork()`'s child branch in `wait.c`) precisely so control-flow
+  signals never appear to cross a real process fork. `trip.rc:517`
+  (`` fn f{@{return;echo xxx}};f;echo yyy ``) is the same phenomenon for
+  `return` via a subshell fork. **Conclusion: `break`/`continue`/`return`
+  must stay dynamic signals in the Rust VM too** — resolved via the normal
+  command-dispatch path (function table, then builtin table) like every
+  other command, with the builtin implementations returning
+  `Err(RcSignal::Break)` / `Err(RcSignal::Continue)` /
+  `Err(RcSignal::Return(status))` that then gets walked through the
+  `Vec<Frame>` stack below, exactly mirroring `rc_raise`'s nesting-rule
+  checks — not lowered to a static `Jump` at compile time. This is
+  functionally identical to how `eError` already had to be handled; the
+  earlier draft of this doc treated break/continue as "the easy part" that
+  reduces to plain jumps, which is only true for the loop's own internal
+  control flow, not for the `break`/`continue`/`return` *commands*
+  themselves.
+- `return`, similarly, is a dynamic signal walked back through an explicit
+  **call-frame stack** maintained as VM state (`Vec<Frame>` with return
+  addresses/instruction pointers, pushed by a `Call` frame kind), not
+  resolved by the Rust call stack or a precomputed jump target. A function
+  call pushes a `Frame::Call`; `return`'s `Err(RcSignal::Return(status))`
+  walks up to the nearest `Frame::Call`, popping/cleaning any intervening
+  loop/arena/var-stack frames along the way (this is exactly what lets
+  `return` legally exit a `while`/`for` loop nested inside the same
+  function, per `rc.1`: "you can return from a loop inside a function").
 - The genuinely hard part of `except.c` — `eError` propagating through
   arbitrary nesting while running cleanup at each level it passes through
   (arena restore, var-stack pop, fd close, fifo unlink) — reduces to
@@ -180,6 +221,101 @@ plain data instead of relying on `Drop`/panics as control flow). The shape:
   state as part of unwinding (`redirq = NULL; cond = FALSE;`), so the
   Rust replacement's "signal" type needs to carry/trigger the same
   side effects, not just transfer control.
+
+### 3.1 Concrete `Instr` set and `Frame` enum
+
+A first-pass sketch, enough detail to start implementing against. Values on
+the VM's operand stack are `List`s (rc's native value: a linked/vec'd
+sequence of `Word { w: Rc<str>, m: Option<Rc<str>>, q: bool }`, mirroring
+`struct Word` in `rc.h` — `w` the literal text, `m` an optional glob mask,
+`q` whether it was quoted).
+
+```rust
+enum Instr {
+    // --- value construction ---
+    PushWord(WordId),          // literal word -> single-element List
+    Concat,                    // pop 2 Lists, push pairwise/distributive ^-concat (rc.1 "List Concatenation")
+    VarRef(StrId),             // $var -> push List (empty list if unset)
+    VarSubscript(StrId),       // $var(n / m-n / m-) -> push List, pops subscript list first
+    VarCount(StrId),           // $#var -> push 1-element List
+    Flatten,                   // $^var: pop List, push single space-joined Word
+    Glob,                      // pop List, expand filename metacharacters, push List
+    Backquote { ifs: Option<StrId> }, // run compiled command, capture stdout, split, push List
+    MakeList(u32),             // pop N Lists, build literal (a b c) list
+
+    // --- side-effecting ops ---
+    Exec(u32),                 // pop N-word List as argv; resolve fn table, then builtin table, then $path; may fork
+    Pipeline(u32),             // N pipeline stages, each a compiled sub-unit; forks+pipes+waits, sets $status
+    Redirect(RedirOp),         // queue/apply a redirection (open/dup2/close), mirrors qredir/doredirs
+    Assign,                    // pop value List + name, assign (glom.c's assign())
+    LocalAssignPush(StrId),    // push Frame::VarStack(name) for "a=foo cmd" local-assignment scoping
+    LocalAssignPop,
+    FnDef(StrId, CompiledId), FnRm(StrId),
+    Match,                     // `~` command: pop pattern list + subject list, push bool-as-status
+
+    // --- static control flow (resolved at compile time) ---
+    Jump(IP), JumpIfFalse(IP), JumpIfTrue(IP),
+    Not,
+    SetCond(bool),             // toggle the `cond` flag around test evaluation, for `-e` semantics (§13)
+
+    // --- loop/arena scaffolding (paired push/pop, not signal-based) ---
+    PushLoopFrame(IP),         // Frame::Loop{break_target}; ~ except(eBreak, ...)
+    PopLoopFrame,
+    PushIterFrame,             // Frame::Iter; ~ except(eContinue, ...) + a fresh Frame::Arena per iteration
+    PopIterFrame,
+    ArenaCheckpoint, ArenaRestore, // Frame::Arena; ~ newblock()/restoreblock()
+
+    // --- function calls / forking ---
+    Call(CompiledId),          // pushes Frame::Call{return_ip, saved $0/$*}, runs body
+    Fork(ForkKind),            // subshell/background/pipeline-stage/redirected-builtin;
+                               // child branch runs Frame-stripping (~ clearflow()) before continuing — see below
+}
+
+enum Frame {
+    Error   { resume: IP, was_interactive: bool },     // ~ eError
+    Loop    { break_target: IP },                       // ~ eBreak
+    Iter    { continue_target: IP },                    // ~ eContinue
+    Call    { return_target: IP, saved_star: SavedStar }, // ~ eReturn
+    VarStack{ name: StrId },                             // ~ eVarstack
+    Arena   { checkpoint: ArenaMark },                   // ~ eArena
+    Fifo    { path: PathBuf },                           // ~ eFifo
+    Fd      { fd: RawFd },                               // ~ eFd
+}
+
+enum RcSignal {
+    Error,
+    Break,
+    Continue,
+    Return(Status),
+}
+```
+
+The `break`/`continue`/`return` *builtins* (dispatched dynamically via
+`Instr::Exec`, per §3's correction above, not via any dedicated opcode)
+return `Err(RcSignal::...)`. A single `Shell::raise(&mut self, sig:
+RcSignal) -> RaiseOutcome` function is the direct port of `rc_raise`: pop
+`self.frames` from the top; for each frame that doesn't match `sig`'s
+target kind, apply `sig`'s nesting-rule check (the exact table from
+`rc_raise` — e.g. raising `Break` past anything other than `Arena`/
+`VarStack`/`Iter` is a hard error, matching `"break outside of loop"`) and
+run that frame's cleanup (`VarStack` → `varrm`-equivalent, `Arena` →
+restore, `Fd`/`Fifo` → close/unlink); on a matching frame, stop and jump to
+its stored resume point. No Rust-level unwinding, panics, or `?`-propagation
+across arbitrary call depth is involved — `raise` is one bounded loop over
+`Vec<Frame>`, callable from anywhere in the VM dispatch loop.
+
+**Fork must strip signal-reachable frames in the child, mirroring
+`clearflow()`.** Every `Instr::Fork` (subshells `@{}`, background `&`,
+pipeline stages, and the redirected-builtin case that forces a fork before
+running a builtin like `break >/dev/null`) duplicates the OS process; in
+Rust this means the child branch inherits a full copy of `self.frames`
+(same as C's `fork()` copying the exception stack), and — just like
+`wait.c`'s `rc_fork()` calling `clearflow()` on the child branch — the
+child must immediately strip every `Frame::Loop`/`Frame::Iter`/`Frame::Call`
+entry before executing anything. Skipping this step is exactly the bug
+class `trip.rc:518`/`:517` guard against: without it, `break`/`return` in
+a forked child would silently (and incorrectly) resolve against frame
+markers that belong to a loop/function in a *different process*.
 
 ## 4. The `Node` tree representation: tagged union with variable arity, built via C varargs
 
@@ -537,7 +673,7 @@ catch as exact-behavior regressions, not just missing features:
 |---|----------|-------------------------------|------------------------|
 | 1 | Dual yacc grammars + stateful lexer/heredoc coupling | Expands #1 | `grmtools`/`lrpar`; grammar must lose mid-rule actions/empty productions regardless of tool |
 | 2 | Nested/scoped arena tied to unwind, dual arena+permanent alloc | Expands #2 | Arena checkpoints become one `Frame` variant in the §3 VM frame stack; permanent storage is the compiled-function cache, not the arena |
-| 3 | setjmp/longjmp control flow: break/continue/return + selective error unwinding with per-frame cleanup | Expands #3 | Compile to a flat opcode array; VM loop with explicit `ip`/call-frame stack for break/continue/return; explicit `Vec<Frame>` mirroring `Estack`, popped-with-cleanup on error — no reliance on Rust panics/unwinding |
+| 3 | setjmp/longjmp control flow: selective error/break/continue/return unwinding with per-frame cleanup | Expands #3 | Compile loop/branch structure itself to static `Jump`/`JumpIfFalse` (§3.1); keep `break`/`continue`/`return` as *dynamic signals* dispatched like any other command (they're shadowable builtins, not grammar keywords — confirmed via `rc.1`'s grammar + `exec.c`'s fn-before-builtin lookup + `trip.rc:517`/`:518`), walked through an explicit `Vec<Frame>` mirroring `Estack`'s nesting rules; forked children must strip Loop/Iter/Call frames (~`clearflow()`) |
 | 3c| Signal-handler-driven longjmp out of blocking syscalls | New, adjacent to #3 | Self-pipe/flag-and-poll at syscall retry points; drop the `slowbuf` fast-path bypass, keep `sigchk()`-style deferred handling |
 | 4 | Untagged variable-arity `Node` union built via varargs | New | Likely doesn't need to persist past compilation at all if §3's compile-to-opcodes design is used; source text remains the form used for `fn`/env pretty-printing, as it partly already is via `extdef` |
 | 5 | Runtime-extensible custom printf engine | New | Replace `%X` call sites with explicit typed formatting functions |
