@@ -975,6 +975,15 @@ most of these macros are just gone, not translated, and the ones that
 remain are ordinary `#[cfg(target_os = "...")]` splits between exactly two
 OS families, not an open-ended portability matrix.
 
+**Priority ordering, not a scope limit:** the goal is `trip.rc` (§12)
+passing on macOS, Ubuntu, and CentOS *first* — this target-platform
+decision exists to unblock that goal quickly by not spending effort on
+portability the acceptance criterion doesn't need yet, not to declare
+that broader portability will never matter. If it matters later, revisit
+then; don't let "we're not chasing the full historical Unix matrix right
+now" drift into "portability beyond these three is out of scope
+permanently" — that's a separate decision nobody's made.
+
 ## 11. Historical note: this analysis supersedes/duplicates two smaller notes already in `drazen/`
 
 `drazen/volatile/sigsetjmp-jbwrap-except.txt` documents an easy-to-miss
