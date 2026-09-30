@@ -156,14 +156,33 @@ the conflict question:
   tokens — `PREDIR` in `parse.y`, `CALC_UNARY_PLUSMINUS` in `calc.y` — hit
   this. Yacc/byacc allow the fictitious-token pattern unconditionally (it's
   a well-known, intentional yacc idiom for injecting a precedence level
-  with no lexical representation); grmtools does not, by default. Workaround
-  confirmed: `CTParserBuilder::warnings_are_errors(false)` downgrades it to
-  a harmless warning and the build succeeds — a one-line builder-config
-  fix, not a grammar change, but worth recording explicitly so it isn't
-  rediscovered as a mystery build failure during real implementation. (If
-  `warnings_are_errors(true)` needs to stay on for other diagnostics, the
-  alternative is threading the fictitious token through one otherwise-dead
-  production instead.)
+  with no lexical representation); grmtools does not, by default.
+  **Resolved with a real grammar fix, not `warnings_are_errors(false)`:**
+  declare the token with `%token` in addition to its `%nonassoc`/`%left`/
+  `%right` precedence entry (grmtools, unlike yacc, doesn't treat a bare
+  precedence declaration as sufficient to make a symbol referenceable in a
+  production body — confirmed empirically: referencing the bare
+  `%nonassoc`-only token in a production fails with `Unknown reference to
+  rule 'PREDIR'` until `%token PREDIR` is added too), then add it as one
+  extra, never-actually-reachable-at-runtime alternative on an existing,
+  thematically-adjacent, already-reachable nonterminal — concretely,
+  `redir : DUP | REDIR word | SREDIR word | PREDIR ;` (analogously
+  `expr : ... | CALC_UNARY_PLUSMINUS ;` for `calc.y`). Confirmed empirically:
+  with this change, both grammars build with **zero warnings and zero
+  conflicts** under the strict defaults (`error_on_conflicts(true)`,
+  `warnings_are_errors(true)` — neither relaxed). This is sound because
+  `PREDIR`/`CALC_UNARY_PLUSMINUS` are never actually emitted by the lexer
+  in the first place (that's the entire point of a fictitious token) —
+  making them grammatically reachable-but-lexically-impossible doesn't
+  change which real input strings parse or how, it only satisfies
+  grmtools' static "does every declared terminal appear somewhere in a
+  live production" check. First attempt (adding the token to an
+  *unreachable* dummy nonterminal, e.g. `marker: PREDIR ;` with `marker`
+  referenced by nothing) does **not** work — grmtools' reachability
+  analysis flags the unreachable nonterminal itself (`Unused rule`) and
+  *still* reports the token as unused, since it isn't reachable from
+  `%start` either; the fix requires wiring it into a nonterminal that's
+  actually reachable, not just any production mentioning it.
 
 **Decision: the grammar is not required to be a verbatim transcription.**
 The constraint is the accepted language and semantics, not the shape of
