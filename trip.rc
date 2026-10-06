@@ -394,8 +394,8 @@ $abc heredoc$x
 $abc^n $x^here$x^doc
 EOF
 {if (!~ `` $nl cat '	') fail quoted heredoc} << ' '
-
-
+	
+ 
 
 <<<[9] ``''{cat $bigfile} \
 {
