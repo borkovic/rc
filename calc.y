@@ -12,8 +12,6 @@ extern int printf(const char *, ...);
 
 #include <stdio.h>
 
-static FILE *eqeq = NULL;
-
 
 #include "calc_decl.h"
 #include "rc.h"
@@ -94,20 +92,7 @@ expr: expr CALC_OROR expr    { $$ = $1 || $3; }
 	| expr '^' expr { $$ = $1 ^ $3; } ;
 	| expr '&' expr { $$ = $1 & $3; } ;
 	| expr CALC_EQEQ expr {
-		if (eqeq == NULL) {
-			eqeq = fopen("eqeq.txt", "w");
-		}
-		fprintf(eqeq, "(Y-Comparing %lld == %lld)\n", (long long)$1, (long long)$3);
-		fflush(eqeq);
-		fprint(1, "(Z-Comparing %lld == %lld)\n", (long long)$1, (long long)$3);
-		fflush(stdout);
-
 		$$ = ($1 == $3);
-
-		fprintf(eqeq, "(Y-Result of comparison %lld == %lld: %lld)\n", (long long)$1, (long long)$3, (long long)$$);
-		fflush(eqeq);
-		fprint(1, "(Z-Result of comparison %lld == %lld: %lld)\n", (long long)$1, (long long)$3, (long long)$$);
-		fflush(stdout);
 	}
 	| expr CALC_NEQ expr  { $$ = ($1 != $3); }
 	| expr '>' expr { $$ = $1 > $3; }

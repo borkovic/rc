@@ -5,7 +5,7 @@
 #define YYBYACC 1
 #define YYMAJOR 2
 #define YYMINOR 0
-#define YYPATCH 20241231
+#define YYPATCH 20260126
 
 #define YYEMPTY        (-1)
 #define yyclearin      (yychar = YYEMPTY)
@@ -124,8 +124,6 @@ extern int printf(const char *, ...);
 
 #include <stdio.h>
 
-static FILE *eqeq = NULL;
-
 
 #include "calc_decl.h"
 #include "rc.h"
@@ -152,12 +150,12 @@ static FILE *eqeq = NULL;
 #endif
 #ifndef YYSTYPE_IS_DECLARED
 #define YYSTYPE_IS_DECLARED 1
-#line 40 "calc.y"
+#line 38 "calc.y"
 typedef union YYSTYPE {
 	CalcValue m_Val;
 } YYSTYPE;
 #endif /* !YYSTYPE_IS_DECLARED */
-#line 161 "calc.c"
+#line 159 "calc.c"
 
 /* compatibility with bison */
 #ifdef YYPARSE_PARAM
@@ -684,12 +682,12 @@ struct YYParseState_s
 };
 typedef struct YYParseState_s YYParseState;
 #endif /* YYBTYACC */
-#line 161 "calc.y"
+#line 146 "calc.y"
 
 /*
 */
 
-#line 693 "calc.c"
+#line 691 "calc.c"
 
 /* For use in generated program */
 #define yydepth (int)(yystack.s_mark - yystack.s_base)
@@ -1422,127 +1420,114 @@ yyreduce:
     switch (yyn)
     {
 case 1:
-#line 75 "calc.y"
+#line 73 "calc.y"
 	{	assert('\0' == lexData->m_Indent[0]);
 			lexData->m_CalcResult = yystack.l_mark[0].m_Val;
 		}
-#line 1430 "calc.c"
+#line 1428 "calc.c"
 break;
 case 2:
-#line 79 "calc.y"
+#line 77 "calc.y"
 	{	assert('\0' != lexData->m_Indent[0]);
 			lexData->m_CalcResult = yystack.l_mark[0].m_Val;
 		}
-#line 1437 "calc.c"
+#line 1435 "calc.c"
 break;
 case 3:
-#line 86 "calc.y"
+#line 84 "calc.y"
 	{	assert('\0' != lexData->m_Indent[0]);
 			yyval.m_Val = yystack.l_mark[0].m_Val;
 		}
-#line 1444 "calc.c"
+#line 1442 "calc.c"
 break;
 case 4:
-#line 91 "calc.y"
+#line 89 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val || yystack.l_mark[0].m_Val; }
-#line 1449 "calc.c"
+#line 1447 "calc.c"
 break;
 case 5:
-#line 92 "calc.y"
+#line 90 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val && yystack.l_mark[0].m_Val; }
-#line 1454 "calc.c"
+#line 1452 "calc.c"
 break;
 case 6:
-#line 93 "calc.y"
+#line 91 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val | yystack.l_mark[0].m_Val; }
-#line 1459 "calc.c"
+#line 1457 "calc.c"
 break;
 case 7:
-#line 94 "calc.y"
+#line 92 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val ^ yystack.l_mark[0].m_Val; }
-#line 1464 "calc.c"
+#line 1462 "calc.c"
 break;
 case 8:
-#line 95 "calc.y"
+#line 93 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val & yystack.l_mark[0].m_Val; }
-#line 1469 "calc.c"
+#line 1467 "calc.c"
 break;
 case 9:
-#line 96 "calc.y"
+#line 94 "calc.y"
 	{
-		if (eqeq == NULL) {
-			eqeq = fopen("eqeq.txt", "w");
-		}
-		fprintf(eqeq, "(Y-Comparing %lld == %lld)\n", (long long)yystack.l_mark[-2].m_Val, (long long)yystack.l_mark[0].m_Val);
-		fflush(eqeq);
-		fprint(1, "(Z-Comparing %lld == %lld)\n", (long long)yystack.l_mark[-2].m_Val, (long long)yystack.l_mark[0].m_Val);
-		fflush(stdout);
-
 		yyval.m_Val = (yystack.l_mark[-2].m_Val == yystack.l_mark[0].m_Val);
-
-		fprintf(eqeq, "(Y-Result of comparison %lld == %lld: %lld)\n", (long long)yystack.l_mark[-2].m_Val, (long long)yystack.l_mark[0].m_Val, (long long)yyval.m_Val);
-		fflush(eqeq);
-		fprint(1, "(Z-Result of comparison %lld == %lld: %lld)\n", (long long)yystack.l_mark[-2].m_Val, (long long)yystack.l_mark[0].m_Val, (long long)yyval.m_Val);
-		fflush(stdout);
 	}
-#line 1489 "calc.c"
+#line 1474 "calc.c"
 break;
 case 10:
-#line 112 "calc.y"
+#line 97 "calc.y"
 	{ yyval.m_Val = (yystack.l_mark[-2].m_Val != yystack.l_mark[0].m_Val); }
-#line 1494 "calc.c"
+#line 1479 "calc.c"
 break;
 case 11:
-#line 113 "calc.y"
+#line 98 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val > yystack.l_mark[0].m_Val; }
-#line 1499 "calc.c"
+#line 1484 "calc.c"
 break;
 case 12:
-#line 114 "calc.y"
+#line 99 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val < yystack.l_mark[0].m_Val; }
-#line 1504 "calc.c"
+#line 1489 "calc.c"
 break;
 case 13:
-#line 115 "calc.y"
+#line 100 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val <= yystack.l_mark[0].m_Val; }
-#line 1509 "calc.c"
+#line 1494 "calc.c"
 break;
 case 14:
-#line 116 "calc.y"
+#line 101 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val >= yystack.l_mark[0].m_Val; }
-#line 1514 "calc.c"
+#line 1499 "calc.c"
 break;
 case 15:
-#line 118 "calc.y"
+#line 103 "calc.y"
 	{	const CalcValue v3 = yystack.l_mark[0].m_Val;
 			yyval.m_Val = (v3 >= 0) ? (yystack.l_mark[-2].m_Val << v3) : (yystack.l_mark[-2].m_Val >> (-v3));
 		}
-#line 1521 "calc.c"
+#line 1506 "calc.c"
 break;
 case 16:
-#line 122 "calc.y"
+#line 107 "calc.y"
 	{	const CalcValue v3 = yystack.l_mark[0].m_Val;
 			yyval.m_Val = (v3>=0) ? (yystack.l_mark[-2].m_Val >> v3) : (yystack.l_mark[-2].m_Val << (-v3));
 		}
-#line 1528 "calc.c"
+#line 1513 "calc.c"
 break;
 case 17:
-#line 125 "calc.y"
+#line 110 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val + yystack.l_mark[0].m_Val; }
-#line 1533 "calc.c"
+#line 1518 "calc.c"
 break;
 case 18:
-#line 126 "calc.y"
+#line 111 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val - yystack.l_mark[0].m_Val; }
-#line 1538 "calc.c"
+#line 1523 "calc.c"
 break;
 case 19:
-#line 127 "calc.y"
+#line 112 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-2].m_Val * yystack.l_mark[0].m_Val; }
-#line 1543 "calc.c"
+#line 1528 "calc.c"
 break;
 case 20:
-#line 129 "calc.y"
+#line 114 "calc.y"
 	{	const CalcValue v3 = yystack.l_mark[0].m_Val;
 			if (v3 == 0) {
 				calcerror("Division by 0");
@@ -1550,10 +1535,10 @@ case 20:
 			}
 			yyval.m_Val = yystack.l_mark[-2].m_Val / (v3);
 		}
-#line 1554 "calc.c"
+#line 1539 "calc.c"
 break;
 case 21:
-#line 137 "calc.y"
+#line 122 "calc.y"
 	{	const CalcValue v3 = yystack.l_mark[0].m_Val;
 			if (v3 == 0) {
 				calcerror("Module by 0");
@@ -1561,30 +1546,30 @@ case 21:
 			}
 			yyval.m_Val = yystack.l_mark[-2].m_Val % (v3);
 		}
-#line 1565 "calc.c"
+#line 1550 "calc.c"
 break;
 case 22:
-#line 144 "calc.y"
+#line 129 "calc.y"
 	{ yyval.m_Val = !yystack.l_mark[0].m_Val; }
-#line 1570 "calc.c"
+#line 1555 "calc.c"
 break;
 case 23:
-#line 145 "calc.y"
+#line 130 "calc.y"
 	{ yyval.m_Val = ~yystack.l_mark[0].m_Val; }
-#line 1575 "calc.c"
+#line 1560 "calc.c"
 break;
 case 24:
-#line 146 "calc.y"
+#line 131 "calc.y"
 	{ yyval.m_Val = -yystack.l_mark[0].m_Val; }
-#line 1580 "calc.c"
+#line 1565 "calc.c"
 break;
 case 25:
-#line 147 "calc.y"
+#line 132 "calc.y"
 	{ yyval.m_Val = +yystack.l_mark[0].m_Val; }
-#line 1585 "calc.c"
+#line 1570 "calc.c"
 break;
 case 26:
-#line 149 "calc.y"
+#line 134 "calc.y"
 	{	const CalcValue v3 = yystack.l_mark[0].m_Val;
 			if (v3 < 0) {
 				calcerror("Negative power");
@@ -1592,19 +1577,19 @@ case 26:
 			}
 			yyval.m_Val = CalcPower(yystack.l_mark[-2].m_Val, v3);
 		}
-#line 1596 "calc.c"
+#line 1581 "calc.c"
 break;
 case 27:
-#line 156 "calc.y"
+#line 141 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[-1].m_Val; }
-#line 1601 "calc.c"
+#line 1586 "calc.c"
 break;
 case 28:
-#line 157 "calc.y"
+#line 142 "calc.y"
 	{ yyval.m_Val = yystack.l_mark[0].m_Val; }
-#line 1606 "calc.c"
+#line 1591 "calc.c"
 break;
-#line 1608 "calc.c"
+#line 1593 "calc.c"
     default:
         break;
     }
