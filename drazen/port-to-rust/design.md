@@ -1346,6 +1346,44 @@ first place, which would let this whole `PROCESS_TEST_LOCK` mechanism be
 deleted outright — isn't set up in this environment; worth adopting
 before `Nmpipe`/heredocs add more real-fd tests to the pile.
 
+## Current Rust implementation notes
+
+The shell VM dispatches builtins after checking for a user-defined
+function of the same name, preserving rc's function-over-builtin
+precedence. Implemented builtins include `break`, `continue`, `return`,
+`true`, `false`, `echo`, `cd`, `shift`, `umask`, `whatis`, and `exit`. `exit` is
+represented as shell state so it unwinds nested function execution and
+stops the top-level input loop without terminating the process from inside
+the VM; this also keeps the VM usable in tests and embedding code.
+
+The C variable table confirms three environment alias pairs:
+`home`/`HOME` share the same list value; `path`/`PATH` and
+`cdpath`/`CDPATH` convert between rc lists and colon-separated strings.
+The Rust implementation currently imports `PATH` into `path` for command
+lookup and lets `cd` consult `home`/`HOME` and `cdpath`. Full bidirectional
+alias synchronization on assignments and export of updated values to
+child processes remains a variable-table task, as described in §13.
+
+`whatis` currently prints variable definitions, builtin names, and
+resolved executable paths. Full parity remains open: compiled functions
+do not retain their source text, and signal handlers are not modeled, so
+function/signal output cannot yet meet rc's re-sourceability guarantee.
+Next builtin additions should prioritize `eval`, `.`, and `exec`, with
+behavior checked against C rc. `eval` must preserve control-flow signals
+such as `return`; it is not safe to approximate as an ordinary nested
+program run without explicit signal propagation.
+
+**Interactive SIGINT must interrupt the current input/command without
+terminating the shell.** The C implementation's `sigint()` prints a
+newline when appropriate, clears pending redirects and conditional state,
+then raises `eError`; its interactive exception frame catches that error
+and returns to the prompt (`except.c`, `input.c`). The Rust driver
+currently installs no SIGINT handler, so the default OS action terminates
+it. Add a deferred, signal-safe flag and check it at safe parser/VM
+boundaries; do not perform allocation, formatting, or VM unwinding inside
+the OS signal handler. Also restore default signal dispositions in forked
+children before running external programs, as `setsigdefaults()` does.
+
 ## Summary table
 
 | # | Obstacle | Novel vs. already-known (1-3)? | Recommended direction |
